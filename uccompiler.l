@@ -44,7 +44,7 @@ ID ([a-zA-Z_])([a-zA-Z0-9_])*
 
 INTLIT [0-9]+
 
-CHRLIT \'([^\n\']|(\\(n|t|\\|\'|\"))|([0-7]{1,3}))\'
+CHRLIT \'([^\n\']|(\\(n|t|\\|\'|\"))|\\([0-7]{1,3}))\'
 
 REALLIT (([0-9]+)"."(([0-9]+)?([eE][+-]?[0-9]+)?))|((".")?[0-9]+([eE][+-]?[0-9]+))
 
@@ -57,6 +57,7 @@ REALLIT (([0-9]+)"."(([0-9]+)?([eE][+-]?[0-9]+)?))|((".")?[0-9]+([eE][+-]?[0-9]+
 	<MULTICOMMENT>.		{column++;}
 \n|\r {line++; column=1;}
 \t|" "	{column++;}
+"//"[^\n\r]*		{column+=yyleng;}
 {RESERVED}	{if(flag_lexical != 0){printf("RESERVED(%s)\n",yytext);} column+=yyleng;}
 {CHAR}	{if(flag_lexical != 0){printf("CHAR\n");} column+=yyleng;}
 {ELSE}	{if(flag_lexical != 0){printf("ELSE\n");} column+=yyleng;}
