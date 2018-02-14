@@ -54,7 +54,6 @@ REALLIT (([0-9]+)"."(([0-9]+)?([eE][+-]?[0-9]+)?))|((".")?[0-9]+([eE][+-]?[0-9]+
 	<MULTICOMMENT>"\n"|"\r"|"\r\n" 		{line++; column = 1;}
 	<MULTICOMMENT><<EOF>>	{printf("Line %d, col %d: unterminated comment\n", comment_line, comment_column); BEGIN 0;}
 	<MULTICOMMENT>"*/"	{column+=yyleng; BEGIN 0;}
-	<MULTICOMMENT>"\f"|"\t" {column++;}
 	<MULTICOMMENT>.		{column+=yyleng;}
 \n|\r {line++; column=1;}
 \t|" "	{column++;}
