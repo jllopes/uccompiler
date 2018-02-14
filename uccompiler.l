@@ -1,8 +1,9 @@
 %{
 int line = 1, column = 1;
-int lexical = 0;
+int comment_line, comment_column;
+int flag_lexical = 0;
 %}
-
+%X MULTICOMMENT
 CHAR "char"
 ELSE "else"
 WHILE "while"
@@ -49,50 +50,63 @@ REALLIT (([0-9]+)"."(([0-9]+)?([eE][+-]?[0-9]+)?))|((".")?[0-9]+([eE][+-]?[0-9]+
 
 /*...definições...*/
 %%
+"/*"					{BEGIN MULTICOMMENT; comment_line = line; comment_column = column; column+=yyleng;}
+	<MULTICOMMENT>\n\r		{line++; column = 1;}
+	<MULTICOMMENT>"*/"	{column+=yyleng; BEGIN 0;}
+	<MULTICOMMENT><<EOF>>	{printf("Line %d, col %d: unterminated comment\n", comment_line, comment_column); BEGIN 0;}
+	<MULTICOMMENT>.		{column++;}
 \n|\r {line++; column=1;}
 \t|" "	{column++;}
-{RESERVED}	{printf("RESERVED(%s)\n",yytext); column+=yyleng;}
-{CHAR}	{printf("CHAR\n"); column+=yyleng;}
-{ELSE}	{printf("ELSE\n"); column+=yyleng;}
-{WHILE}	{printf("WHILE\n"); column+=yyleng;}
-{IF}	{printf("IF\n"); column+=yyleng;}
-{INT}	{printf("INT\n"); column+=yyleng;}
-{SHORT}	{printf("SHORT\n"); column+=yyleng;}
-{DOUBLE}	{printf("DOUBLE\n"); column+=yyleng;}
-{RETURN}	{printf("RETURN\n"); column+=yyleng;}
-{VOID} {printf("VOID\n"); column+=yyleng;}
-{BITWISEAND} {printf("BITWISEAND\n"); column+=yyleng;}
-{BITWISEOR} {printf("BITWISEOR\n"); column+=yyleng;}
-{BITWISEXOR} {printf("BITWISEXOR\n"); column+=yyleng;}
-{AND} {printf("AND\n"); column+=yyleng;}
-{OR} {printf("OR\n"); column+=yyleng;}
-{ASSIGN} {printf("ASSIGN\n"); column+=yyleng;}
-{NOT} {printf("NOT\n"); column+=yyleng;}
-{MUL} {printf("MUL\n"); column+=yyleng;}
-{COMMA} {printf("COMMA\n"); column+=yyleng;}
-{DIV} {printf("DIV\n"); column+=yyleng;}
-{EQ} {printf("EQ\n"); column+=yyleng;}
-{NE} {printf("NE\n"); column+=yyleng;}
-{GE} {printf("GE\n"); column+=yyleng;}
-{GT} {printf("GT\n"); column+=yyleng;}
-{LE} {printf("LE\n"); column+=yyleng;}
-{LT} {printf("LT\n"); column+=yyleng;}
-{LBRACE} {printf("LBRACE\n"); column+=yyleng;}
-{LPAR} {printf("LPAR\n"); column+=yyleng;}
-{RBRACE} {printf("RBRACE\n"); column+=yyleng;}
-{RPAR} {printf("RPAR\n"); column+=yyleng;}
-{MINUS} {printf("MINUS\n"); column+=yyleng;}
-{PLUS} {printf("PLUS\n"); column+=yyleng;}
-{MOD} {printf("MOD\n"); column+=yyleng;}
-{SEMI} {printf("SEMI\n"); column+=yyleng;}
-{CHRLIT} {printf("CHRLIT(%s)\n",yytext); column+=yyleng;}
-{INTLIT} {printf("INTLIT(%s)\n",yytext); column+=yyleng;}
-{ID} {printf("ID(%s)\n",yytext); column+=yyleng;}
-{REALLIT}	{printf("REALLIT\n"); column+=yyleng;}
-.	{printf("Line %d, col %d: illegal character (%s)\n",line,column,yytext);}
+{RESERVED}	{if(flag_lexical != 0){printf("RESERVED(%s)\n",yytext);} column+=yyleng;}
+{CHAR}	{if(flag_lexical != 0){printf("CHAR\n");} column+=yyleng;}
+{ELSE}	{if(flag_lexical != 0){printf("ELSE\n");} column+=yyleng;}
+{WHILE}	{if(flag_lexical != 0){printf("WHILE\n");} column+=yyleng;}
+{IF}	{if(flag_lexical != 0){printf("IF\n");} column+=yyleng;}
+{INT}	{if(flag_lexical != 0){printf("INT\n");} column+=yyleng;}
+{SHORT}	{if(flag_lexical != 0){printf("SHORT\n");} column+=yyleng;}
+{DOUBLE}	{if(flag_lexical != 0){printf("DOUBLE\n");} column+=yyleng;}
+{RETURN}	{if(flag_lexical != 0){printf("RETURN\n");} column+=yyleng;}
+{VOID} {if(flag_lexical != 0){printf("VOID\n");} column+=yyleng;}
+{BITWISEAND} {if(flag_lexical != 0){printf("BITWISEAND\n");} column+=yyleng;}
+{BITWISEOR} {if(flag_lexical != 0){printf("BITWISEOR\n");} column+=yyleng;}
+{BITWISEXOR} {if(flag_lexical != 0){printf("BITWISEXOR\n");} column+=yyleng;}
+{AND} {if(flag_lexical != 0){printf("AND\n");} column+=yyleng;}
+{OR} {if(flag_lexical != 0){printf("OR\n");} column+=yyleng;}
+{ASSIGN} {if(flag_lexical != 0){printf("ASSIGN\n");} column+=yyleng;}
+{NOT} {if(flag_lexical != 0){printf("NOT\n");} column+=yyleng;}
+{MUL} {if(flag_lexical != 0){printf("MUL\n");} column+=yyleng;}
+{COMMA} {if(flag_lexical != 0){printf("COMMA\n");} column+=yyleng;}
+{DIV} {if(flag_lexical != 0){printf("DIV\n");} column+=yyleng;}
+{EQ} {if(flag_lexical != 0){printf("EQ\n");} column+=yyleng;}
+{NE} {if(flag_lexical != 0){printf("NE\n");} column+=yyleng;}
+{GE} {if(flag_lexical != 0){printf("GE\n");} column+=yyleng;}
+{GT} {if(flag_lexical != 0){printf("GT\n");} column+=yyleng;}
+{LE} {if(flag_lexical != 0){printf("LE\n");} column+=yyleng;}
+{LT} {if(flag_lexical != 0){printf("LT\n");} column+=yyleng;}
+{LBRACE} {if(flag_lexical != 0){printf("LBRACE\n");} column+=yyleng;}
+{LPAR} {if(flag_lexical != 0){printf("LPAR\n");} column+=yyleng;}
+{RBRACE} {if(flag_lexical != 0){printf("RBRACE\n");} column+=yyleng;}
+{RPAR} {if(flag_lexical != 0){printf("RPAR\n");} column+=yyleng;}
+{MINUS} {if(flag_lexical != 0){printf("MINUS\n");} column+=yyleng;}
+{PLUS} {if(flag_lexical != 0){printf("PLUS\n");} column+=yyleng;}
+{MOD} {if(flag_lexical != 0){printf("MOD\n");} column+=yyleng;}
+{SEMI} {if(flag_lexical != 0){printf("SEMI\n");} column+=yyleng;}
+{CHRLIT} {if(flag_lexical != 0){printf("CHRLIT(%s)\n",yytext);} column+=yyleng;}
+{INTLIT} {if(flag_lexical != 0){printf("INTLIT(%s)\n",yytext);} column+=yyleng;}
+{ID} {if(flag_lexical != 0){printf("ID(%s)\n",yytext);} column+=yyleng;}
+{REALLIT}	{if(flag_lexical != 0){printf("REALLIT\n");} column+=yyleng;}
+.	{if(flag_lexical != 0){printf("Line %d, col %d: illegal character (%s)\n",line,column,yytext);}}
 %%
 
-int main(){
+int main(int argc, char **argv){
+	if (argc > 1){
+		if(strcmp(argv[1], "-l") == 0){
+			flag_lexical = 1;
+		}
+		else{
+			flag_lexical = 0;
+		}
+	}
 	yylex();
 	return 0;
 }
