@@ -51,7 +51,7 @@ REALLIT (([0-9]+)"."(([0-9]+)?([eE][+-]?[0-9]+)?))|((".")?[0-9]+([eE][+-]?[0-9]+
 /*...definições...*/
 %%
 "/*"					{BEGIN MULTICOMMENT; comment_line = line; comment_column = column; column+=yyleng;}
-	<MULTICOMMENT>"\n"|"\r"|"\r\n" 		{line++; column = 1;}
+	<MULTICOMMENT>\n|\r|\r\n 		{line++; column = 1;}
 	<MULTICOMMENT><<EOF>>	{printf("Line %d, col %d: unterminated comment\n", comment_line, comment_column); BEGIN 0;}
 	<MULTICOMMENT>"*/"	{column+=yyleng; BEGIN 0;}
 	<MULTICOMMENT>.		{column+=yyleng;}
@@ -114,4 +114,5 @@ int main(int argc, char **argv){
 
 int yywrap(){
 	return 1;
+}n 1;
 }
