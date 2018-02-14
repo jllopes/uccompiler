@@ -2,6 +2,7 @@
 int line = 1, column = 1;
 int lexical = 0;
 %}
+
 CHAR "char"
 ELSE "else"
 WHILE "while"
@@ -36,7 +37,7 @@ PLUS "+"
 MOD "%"
 SEMI ";"
 
-RESERVED "auto"|"break"|"case"|"const"|"continue"|"default"|"do"|"enum"|"extern"|"float"|"for"|"goto"|inline"|"long"|"register"|"restrict"|"signed"|"sizeof"|"static"|"struct"|"switch"|"typedef"|"union"|"unsigned"|"void"|"volatile"|"_Bool"|"_Complex"|"_Imaginary"|"["|"]"|"--"|"++"
+RESERVED "auto"|"break"|"case"|"const"|"continue"|"default"|"do"|"enum"|"extern"|"float"|"for"|"goto"|"inline"|"long"|"register"|"restrict"|"signed"|"sizeof"|"static"|"struct"|"switch"|"typedef"|"union"|"unsigned"|"volatile"|"_Bool"|"_Complex"|"_Imaginary"|"["|"]"|"--"|"++"
 
 ID ([a-zA-Z_])([a-zA-Z0-9_])*
 
@@ -50,6 +51,7 @@ REALLIT (([0-9]+)"."(([0-9]+)?([eE][+-]?[0-9]+)?))|((".")?[0-9]+([eE][+-]?[0-9]+
 %%
 \n|\r {line++; column=1;}
 \t|" "	{column++;}
+{RESERVED}	{printf("RESERVED(%s)\n",yytext); column+=yyleng;}
 {CHAR}	{printf("CHAR\n"); column+=yyleng;}
 {ELSE}	{printf("ELSE\n"); column+=yyleng;}
 {WHILE}	{printf("WHILE\n"); column+=yyleng;}
