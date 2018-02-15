@@ -46,7 +46,7 @@ INTLIT [0-9]+
 
 CHRLIT \'([^\n\']|\\(n|t|\\|\'|\"|[0-7]{1,3}))\'
 
-REALLIT (([0-9]+)"."(([0-9]+)?([eE][+-]?[0-9]+)?))|((".")?[0-9]+([eE][+-]?[0-9]+))
+REALLIT (([0-9]+)"."?((([0-9]+)?([eE][+-]?[0-9]+)?)))|((".")[0-9]+([eE][+-]?[0-9]+)?)|[0-9]+([eE][+-]?[0-9]+)
 
 /*...definições...*/
 %%
@@ -93,8 +93,11 @@ REALLIT (([0-9]+)"."(([0-9]+)?([eE][+-]?[0-9]+)?))|((".")?[0-9]+([eE][+-]?[0-9]+
 {MOD} {if(flag_lexical != 0){printf("MOD\n");} column+=yyleng;}
 {SEMI} {if(flag_lexical != 0){printf("SEMI\n");} column+=yyleng;}
 {CHRLIT} {if(flag_lexical != 0){printf("CHRLIT(%s)\n",yytext);} column+=yyleng;}
+
+
 {INTLIT} {if(flag_lexical != 0){printf("INTLIT(%s)\n",yytext);} column+=yyleng;}
 {ID} {if(flag_lexical != 0){printf("ID(%s)\n",yytext);} column+=yyleng;}
+
 {REALLIT}	{if(flag_lexical != 0){printf("REALLIT\n");} column+=yyleng;}
 .	{if(flag_lexical != 0){printf("Line %d, col %d: illegal character (%s)\n",line,column,yytext);}}
 %%
@@ -114,5 +117,4 @@ int main(int argc, char **argv){
 
 int yywrap(){
 	return 1;
-}n 1;
 }
