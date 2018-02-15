@@ -96,15 +96,13 @@ REALLIT (([0-9]+)"."([0-9]+)?([eE][+-]?[0-9]+)?)|"."[0-9]+([eE][+-]?[0-9]+)?|[0-
 {MOD} {if(flag_lexical != 0){printf("MOD\n");} column+=yyleng;}
 {SEMI} {if(flag_lexical != 0){printf("SEMI\n");} column+=yyleng;}
 {CHRLIT} {if(flag_lexical != 0){printf("CHRLIT(%s)\n",yytext);} column+=yyleng;}
-{INVCHRLIT}	{if(flag_lexical != 0){printf("Line %d, col %d: invalid char constant (%s)\n",line,column,yytext);}}
-{UNTCHRLIT}	{if(flag_lexical != 0){printf("Line %d, col %d: unterminated char constant \n",line,column);}}
-
 
 {INTLIT} {if(flag_lexical != 0){printf("INTLIT(%s)\n",yytext);} column+=yyleng;}
 {ID} {if(flag_lexical != 0){printf("ID(%s)\n",yytext);} column+=yyleng;}
 
 {REALLIT}	{if(flag_lexical != 0){printf("REALLIT(%s)\n",yytext);} column+=yyleng;}
-.	{if(flag_lexical != 0){printf("Line %d, col %d: illegal character (%c)\n",line,column,yytext[0]);} column++;}
+
+.	{printf("Line %d, col %d: illegal character (%c)\n",line,column,yytext[0]); column++;}
 %%
 
 int main(int argc, char **argv){
