@@ -96,15 +96,11 @@ REALLIT (([0-9]+)"."([0-9]+)?([eE][+-]?[0-9]+)?)|"."[0-9]+([eE][+-]?[0-9]+)?|[0-
 {MOD} {if(flag_lexical != 0){printf("MOD\n");} column+=yyleng;}
 {SEMI} {if(flag_lexical != 0){printf("SEMI\n");} column+=yyleng;}
 {CHRLIT} {if(flag_lexical != 0){printf("CHRLIT(%s)\n",yytext);} column+=yyleng;}
-<<<<<<< HEAD
+
 
 {INVCHRLIT}	{printf("Line %d, col %d: invalid char constant (%s)\n",line,column,yytext);}
 {UNTCHRLIT}	{printf("Line %d, col %d: unterminated char constant\n",line,column);}
 
-=======
-{INVCHRLIT}	{printf("Line %d, col %d: invalid char constant (%s)\n",line,column,yytext);}
-{UNTCHRLIT}	{printf("Line %d, col %d: unterminated char constant \n",line,column);}
->>>>>>> ea5c3c028f001a504d404bc0ba1058abc6a0f0e5
 {INTLIT} {if(flag_lexical != 0){printf("INTLIT(%s)\n",yytext);} column+=yyleng;}
 {ID} {if(flag_lexical != 0){printf("ID(%s)\n",yytext);} column+=yyleng;}
 
