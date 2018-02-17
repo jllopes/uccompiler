@@ -13,3 +13,5 @@
 
 {INVCHRLIT}	{printf("Line %d, col %d: invalid char constant (%s)\n",line,column,yytext);}
 {UNTCHRLIT}	{printf("Line %d, col %d: unterminated char constant \n",line,column);}
+\'([^\n\']|\\([^\n\r]))*(\\)?
+INVCHARLIT \'([^\n\']|(\\^[\n\']))*\'
