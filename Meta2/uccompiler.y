@@ -11,20 +11,22 @@
 
 %token <token> CHAR ELSE WHILE IF INT SHORT DOUBLE RETURN VOID AND OR BITWISEAND BITWISEOR BITWISEXOR MUL COMMA DIV EQ NE GE GT LE LT ASSIGN NOT LBRACE LPAR RBRACE RPAR MINUS PLUS MOD SEMI RESERVED ID INTLIT CHRLIT INVCHRLIT UNTCHRLIT REALLIT
 
-%nonassoc IFPREC
-%nonassoc ELSE
+
 %left COMMA
 %right ASSIGN
 %left OR
 %left AND
+%left BITWISEOR
+%left BITWISEXOR
+%left BITWISEAND
 %left EQ NE
 %left GT GE LT LE
 %left MINUS PLUS
-%left DIV MOD
+%left MUL DIV MOD
 %right NOT 
-%right UNARY
-%left LPAR
 
+%nonassoc IFPREC
+%nonassoc ELSE
 %%
 Program: Start                                                                  
 
@@ -33,9 +35,9 @@ Start: FunctionDefinition StartAux
      | Declaration StartAux
 ;
 
-StartAux: FunctionDefinition StartAux
-        | FunctionDeclaration StartAux
-        | Declaration StartAux
+StartAux: StartAux FunctionDefinition
+        | StartAux FunctionDeclaration
+        | StartAux Declaration
         |
 ;
 
@@ -57,7 +59,7 @@ FunctionDeclarator: ID LPAR ParameterList RPAR;
 
 ParameterList: ParameterDeclaration ParameterListAux;
 
-ParameterListAux: COMMA ParameterDeclaration ParameterListAux
+ParameterListAux: ParameterListAux COMMA ParameterDeclaration
                 |
 ;
 
@@ -67,7 +69,7 @@ ParameterDeclaration: TypeSpec ID
 
 Declaration: TypeSpec Declarator DeclarationAux SEMI;
 
-DeclarationAux: COMMA Declarator DeclarationAux
+DeclarationAux: DeclarationAux COMMA Declarator
               | 
 ;
 
@@ -92,44 +94,35 @@ Statement: Expression SEMI
          | RETURN SEMI
 ;
 
-StatementAux: Statement StatementAux
+StatementAux: StatementAux Statement
             |
 ;
 
-Expression: ExpressionAux ExpressionOperators ExpressionAux
-          | ExpressionAux
+Expression: Expression PLUS Expression
+          | Expression MINUS Expression
+          | Expression MUL Expression
+          | Expression DIV Expression
+          | Expression MOD Expression
+          | Expression OR Expression
+          | Expression AND Expression
+          | Expression BITWISEAND Expression
+          | Expression BITWISEOR Expression
+          | Expression BITWISEXOR Expression
+          | Expression EQ Expression
+          | Expression NE Expression
+          | Expression LE Expression
+          | Expression GE Expression
+          | Expression LT Expression
+          | Expression GT Expression
+          | PLUS Expression
+          | MINUS Expression
+          | NOT Expression
+          | ID LPAR Expression RPAR
+          | ID LPAR RPAR
+          | ID
+          | INTLIT
+          | CHRLIT
+          | REALLIT
+          | LPAR Expression RPAR
 ;
-
-ExpressionAux: PLUS Expression
-             | MINUS Expression
-             | NOT Expression
-             | ID LPAR Expression RPAR
-             | ID LPAR RPAR
-             | ID
-             | INTLIT
-             | CHRLIT
-             | REALLIT
-             | LPAR Expression RPAR
-;
-
-ExpressionOperators: ASSIGN
-             | COMMA
-             | PLUS
-             | MINUS
-             | MUL
-             | DIV
-             | MOD
-             | OR
-             | AND
-             | BITWISEAND
-             | BITWISEOR
-             | BITWISEXOR
-             | EQ
-             | NE
-             | LE
-             | GE
-             | LT
-             | GT
-;
-
 %%
