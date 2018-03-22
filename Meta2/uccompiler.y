@@ -1,7 +1,7 @@
 %{
     #include <stdio.h>
     int yylex(void);
-    void yyerror (const char *s);
+    void yyerror (char *s);
 %}
 
 
@@ -9,105 +9,114 @@
     char* token;
 }
 
-%token <token> CHAR ELSE WHILE IF INT SHORT DOUBLE RETURN VOID AND OR BITWISEAND BITWISEOR BITWISEXOR MUL COMMA DIV EQ NE GE GT LE LT ASSIGN NOT LBRACE RBRACE RPAR MINUS PLUS MOD SEMI RESERVED ID INTLIT CHRLIT INVCHRLIT UNTCHRLIT REALLIT
+%token <token> CHAR ELSE WHILE IF INT SHORT DOUBLE RETURN VOID AND OR BITWISEAND BITWISEOR BITWISEXOR MUL COMMA DIV EQ NE GE GT LE LT ASSIGN NOT LBRACE LPAR RBRACE RPAR MINUS PLUS MOD SEMI RESERVED ID INTLIT CHRLIT INVCHRLIT UNTCHRLIT REALLIT
 
-%left 
-
+%nonassoc IFPREC
+%nonassoc IFELSE
+%left COMMA
+%right ASSIGN
+%left OR
+%left AND
+%left EQ NE
+%left GT GE LT LE
+%left MINUS PLUS
+%left DIV MOD
+%right NOT 
+%right UNARY
+%left LPAR
 %%
-Program: Start;
+Program: Start                                                                   {printf("accepted");};
 
-Start: FunctionDefinition FunctionsAndDeclarations
-     | FunctionDeclaration FunctionsAndDeclarations
-     | Declaration FunctionsAndDeclarations
+Start: FunctionDefinition StartAux
+     | FunctionDeclaration StartAux
+     | Declaration StartAux
 ;
 
-FunctionsAndDeclarations: FunctionDefinition FunctionsAndDeclarations
-                        | FunctionDeclaration FunctionsAndDeclarations
-                        | Declaration FunctionsAndDeclarations
-                        |
+StartAux: FunctionDefinition StartAux
+        | FunctionDeclaration StartAux
+        | Declaration StartAux
+        |
 ;
 
 FunctionDefinition: TypeSpec FunctionDeclarator FunctionBody;
 
-TypeSpec: CHRLIT 
-        | INTLIT 
-        | VOID 
-        | SHORT 
-        | DOUBLE; 
+FunctionBody: LBRACE DeclarationsAndStatements RBRACE
+            | LBRACE RBRACE
+;
+
+DeclarationsAndStatements: Statement DeclarationsAndStatements
+                         | Declaration DeclarationsAndStatements
+                         | Statement
+                         | Declaration
+;
 
 FunctionDeclaration: TypeSpec FunctionDeclarator SEMI;
 
 FunctionDeclarator: ID LPAR ParameterList RPAR;
 
-ParameterList: ParameterDeclaration ParameterListRep;
+ParameterList: ParameterDeclaration ParameterListAux;
 
-ParameterListRep: COMMA ParameterDeclaration ParameterListRep
-                | 
+ParameterListAux: COMMA ParameterDeclaration ParameterListAux
+                |
 ;
 
-ParameterDeclaration: TypeSpec
-                    | TypeSpec ID
+ParameterDeclaration: TypeSpec ID
+                    | TypeSpec
 ;
 
-FunctionBody: LBRACE RBRACE
-            | LBRACE DeclarationsAndStatements RBRACE
+Declaration: TypeSpec Declarator DeclarationAux SEMI;
+
+DeclarationAux: COMMA DeclarationAux
+              | 
 ;
 
-DeclarationsAndStatements: Statement DeclarationsAndStatements
-                         | Declaration DeclarationsAndStatements 
-                         | Statement 
-                         | Declaration
+TypeSpec: CHAR
+        | INT
+        | VOID
+        | SHORT
+        | DOUBLE
 ;
 
-Declaration: TypeSpec Declarator CommaDeclarator SEMI;
-
-CommaDeclarator: COMMA Declarator CommaDeclarator
-               |
+Declarator: ID
+          | ID ASSIGN Expression
 ;
 
-Declarator: ID 
-          | ID ASSIGN Expression;
-
-Statement: Expr SEMI
-         | SEMI
-;
-
-Statement: LBRACE StatementRep RBRACE;
-
-Statement: IF LPAR Expression RPAR Statement;
-
-Statement: WHILE LPAR Expression RPAR Statement;
-
-Statement: RETURN Expression SEMI
+Statement: Expression SEMI
+         | Expression
+         | LBRACE StatementAux RBRACE
+         | IF LPAR Expression RPAR Statement
+         | IF LPAR Expression RPAR Statement ELSE Statement %prec IFELSE
+         | WHILE LPAR Expression RPAR Statement
+         | RETURN Expression SEMI
          | RETURN SEMI
 ;
 
-StatementRep: Statement StatementRep
-            | 
+StatementAux: Statement StatementAux
+            |
 ;
 
 Expression: Expression ASSIGN Expression
           | Expression COMMA Expression
-          | Expression PLUS Expression 
-          | Expression MINUS Expression 
-          | Expression MUL Expression 
-          | Expression DIV Expression 
-          | Expression MOD Expression 
-          | Expression OR Expression 
-          | Expression AND Expression 
-          | Expression BITWISEAND Expression 
+          | Expression PLUS Expression
+          | Expression MINUS Expression
+          | Expression MUL Expression
+          | Expression DIV Expression
+          | Expression MOD Expression
+          | Expression OR Expression
+          | Expression AND Expression
+          | Expression BITWISEAND Expression
           | Expression BITWISEOR Expression
-          | Expression BITWISEXOR Expression 
-          | Expression EQ Expression  
+          | Expression BITWISEXOR Expression
+          | Expression EQ Expression
           | Expression NE Expression
-          | Expression LE Expression 
-          | Expression GE Expression 
-          | Expression LT Expression  
-          | Expression GT Expression 
-          | PLUS Expression
-          | MINUS Expression
+          | Expression LE Expression
+          | Expression GE Expression
+          | Expression LT Expression
+          | Expression GT Expression
+          | PLUS Expression %prec UNARY
+          | MINUS Expression %prec UNARY
           | NOT Expression
-          | ID LPAR Expression ExpressionComma RPAR
+          | ID LPAR Expression RPAR
           | ID LPAR RPAR
           | ID
           | INTLIT
@@ -115,16 +124,4 @@ Expression: Expression ASSIGN Expression
           | REALLIT
           | LPAR Expression RPAR
 ;
-
-ExpressionComma: COMMA Expression
-             |
-;
-
 %%
-
-int main() {
-    while(aux){
-        yyparse();
-    }
-    return 0;
-}

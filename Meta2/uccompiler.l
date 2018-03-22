@@ -1,7 +1,11 @@
 %{
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 int line = 1, column = 1;
 int comment_line, comment_column;
 int flag_lexical = 0;
+int flag_syntax = 0;
 %}
 %X MULTICOMMENT
 CHAR "char"
@@ -116,9 +120,15 @@ int main(int argc, char **argv){
 		}
 	}
 	yylex();
+	yyparse();
 	return 0;
 }
 
 int yywrap(){
 	return 1;
+}
+
+void yyerror(char *s){
+  //flag = 1;
+  printf("Line %d, col %d: %s: %s\n", line, (int)(column-yyleng), s, yytext);
 }
