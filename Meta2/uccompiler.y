@@ -12,7 +12,7 @@
 %token <token> CHAR ELSE WHILE IF INT SHORT DOUBLE RETURN VOID AND OR BITWISEAND BITWISEOR BITWISEXOR MUL COMMA DIV EQ NE GE GT LE LT ASSIGN NOT LBRACE LPAR RBRACE RPAR MINUS PLUS MOD SEMI RESERVED ID INTLIT CHRLIT INVCHRLIT UNTCHRLIT REALLIT
 
 %nonassoc IFPREC
-%nonassoc IFELSE
+%nonassoc ELSE
 %left COMMA
 %right ASSIGN
 %left OR
@@ -85,9 +85,9 @@ Declarator: ID
 Statement: Expression SEMI
          | SEMI
          | LBRACE StatementAux RBRACE
-         | IF LPAR Expression RPAR Statement
+         | IF LPAR Expression RPAR Statement %prec IFPREC
          | IF LPAR Expression RPAR Statement ELSE Statement
-         | WHILE LPAR Expression RPAR Statement
+         | WHILE LPAR Expression RPAR Statement 
          | RETURN Expression SEMI
          | RETURN SEMI
 ;
@@ -96,20 +96,23 @@ StatementAux: Statement StatementAux
             |
 ;
 
-Expression: Expression ExpressionAux Expression
-          | PLUS Expression
-          | MINUS Expression
-          | NOT Expression
-          | ID LPAR Expression RPAR
-          | ID LPAR RPAR
-          | ID
-          | INTLIT
-          | CHRLIT
-          | REALLIT
-          | LPAR Expression RPAR
+Expression: ExpressionAux ExpressionOperators ExpressionAux
+          | ExpressionAux
 ;
 
-ExpressionAux: ASSIGN
+ExpressionAux: PLUS Expression
+             | MINUS Expression
+             | NOT Expression
+             | ID LPAR Expression RPAR
+             | ID LPAR RPAR
+             | ID
+             | INTLIT
+             | CHRLIT
+             | REALLIT
+             | LPAR Expression RPAR
+;
+
+ExpressionOperators: ASSIGN
              | COMMA
              | PLUS
              | MINUS
