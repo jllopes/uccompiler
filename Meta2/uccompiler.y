@@ -24,8 +24,9 @@
 %right NOT 
 %right UNARY
 %left LPAR
+
 %%
-Program: Start                                                                   {printf("accepted");};
+Program: Start                                                                  
 
 Start: FunctionDefinition StartAux
      | FunctionDeclaration StartAux
@@ -66,7 +67,7 @@ ParameterDeclaration: TypeSpec ID
 
 Declaration: TypeSpec Declarator DeclarationAux SEMI;
 
-DeclarationAux: COMMA DeclarationAux
+DeclarationAux: COMMA Declarator DeclarationAux
               | 
 ;
 
@@ -82,10 +83,10 @@ Declarator: ID
 ;
 
 Statement: Expression SEMI
-         | Expression
+         | SEMI
          | LBRACE StatementAux RBRACE
          | IF LPAR Expression RPAR Statement
-         | IF LPAR Expression RPAR Statement ELSE Statement %prec IFELSE
+         | IF LPAR Expression RPAR Statement ELSE Statement
          | WHILE LPAR Expression RPAR Statement
          | RETURN Expression SEMI
          | RETURN SEMI
@@ -95,26 +96,9 @@ StatementAux: Statement StatementAux
             |
 ;
 
-Expression: Expression ASSIGN Expression
-          | Expression COMMA Expression
-          | Expression PLUS Expression
-          | Expression MINUS Expression
-          | Expression MUL Expression
-          | Expression DIV Expression
-          | Expression MOD Expression
-          | Expression OR Expression
-          | Expression AND Expression
-          | Expression BITWISEAND Expression
-          | Expression BITWISEOR Expression
-          | Expression BITWISEXOR Expression
-          | Expression EQ Expression
-          | Expression NE Expression
-          | Expression LE Expression
-          | Expression GE Expression
-          | Expression LT Expression
-          | Expression GT Expression
-          | PLUS Expression %prec UNARY
-          | MINUS Expression %prec UNARY
+Expression: Expression ExpressionAux Expression
+          | PLUS Expression
+          | MINUS Expression
           | NOT Expression
           | ID LPAR Expression RPAR
           | ID LPAR RPAR
@@ -124,4 +108,25 @@ Expression: Expression ASSIGN Expression
           | REALLIT
           | LPAR Expression RPAR
 ;
+
+ExpressionAux: ASSIGN
+             | COMMA
+             | PLUS
+             | MINUS
+             | MUL
+             | DIV
+             | MOD
+             | OR
+             | AND
+             | BITWISEAND
+             | BITWISEOR
+             | BITWISEXOR
+             | EQ
+             | NE
+             | LE
+             | GE
+             | LT
+             | GT
+;
+
 %%
