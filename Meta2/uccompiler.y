@@ -1,5 +1,10 @@
+/*
+João Luís Gaspar Lopes
+Rúben Telmo Domingues Leal
+*/ 
 %{
     #include <stdio.h>
+    #include <stdlib.h>
     int yylex(void);
     void yyerror (char *s);
 %}
@@ -28,12 +33,12 @@
 %nonassoc IFPREC
 %nonassoc ELSE
 %%
-Program: Start                                                                  
+Program: Start;                                                                                                
 
-Start: FunctionDefinition StartAux
-     | FunctionDeclaration StartAux
-     | Declaration StartAux
-;
+Start: FunctionDefinition StartAux                                          
+     | FunctionDeclaration StartAux                                           
+     | Declaration StartAux                                           
+;   
 
 StartAux: StartAux FunctionDefinition
         | StartAux FunctionDeclaration
@@ -41,16 +46,24 @@ StartAux: StartAux FunctionDefinition
         |
 ;
 
-FunctionDefinition: TypeSpec FunctionDeclarator FunctionBody;
+FunctionDefinition: TypeSpec FunctionDeclarator FunctionBody
 
-FunctionBody: LBRACE DeclarationsAndStatements RBRACE
-            | LBRACE RBRACE
+FunctionBody: LBRACE RBRACE
+            | LBRACE DecAndStatDeclaration DecAndStatStatement RBRACE
+            | LBRACE DecAndStatDeclaration RBRACE
+            | LBRACE DecAndStatStatement RBRACE
 ;
 
-DeclarationsAndStatements: Statement DeclarationsAndStatements
-                         | Declaration DeclarationsAndStatements
-                         | Statement
-                         | Declaration
+DecAndStatDeclaration: DecAndStatDeclaration Declaration
+                     | Declaration
+;
+
+DecAndStatStatement: DecAndStatStatement StatementError
+                   | Statement
+;
+
+StatementError: Statement
+              | error SEMI
 ;
 
 FunctionDeclaration: TypeSpec FunctionDeclarator SEMI;
@@ -63,11 +76,13 @@ ParameterListAux: ParameterListAux COMMA ParameterDeclaration
                 |
 ;
 
-ParameterDeclaration: TypeSpec ID
+ParameterDeclaration: TypeSpec ID 
                     | TypeSpec
 ;
 
-Declaration: TypeSpec Declarator DeclarationAux SEMI;
+Declaration: TypeSpec Declarator DeclarationAux SEMI
+           | error SEMI
+;
 
 DeclarationAux: DeclarationAux COMMA Declarator
               | 
@@ -80,25 +95,25 @@ TypeSpec: CHAR
         | DOUBLE
 ;
 
-Declarator: ID
-          | ID ASSIGN Expression
+Declarator: ID ASSIGN Expression
+          | ID
 ;
 
 Statement: Expression SEMI
          | SEMI
-         | LBRACE StatementAux RBRACE
+         | LBRACE StatementError RBRACE
+         | LBRACE RBRACE
          | IF LPAR Expression RPAR Statement %prec IFPREC
          | IF LPAR Expression RPAR Statement ELSE Statement
          | WHILE LPAR Expression RPAR Statement 
          | RETURN Expression SEMI
          | RETURN SEMI
+         | LBRACE error RBRACE
 ;
 
-StatementAux: StatementAux Statement
-            |
-;
-
-Expression: Expression PLUS Expression
+Expression: Expression ASSIGN Expression
+          | Expression COMMA Expression
+          | Expression PLUS Expression
           | Expression MINUS Expression
           | Expression MUL Expression
           | Expression DIV Expression
@@ -124,5 +139,7 @@ Expression: Expression PLUS Expression
           | CHRLIT
           | REALLIT
           | LPAR Expression RPAR
+          | LPAR error RPAR
+          | ID LPAR error RPAR
 ;
 %%
