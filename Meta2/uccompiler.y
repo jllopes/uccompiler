@@ -58,12 +58,16 @@ DecAndStatDeclaration: DecAndStatDeclaration Declaration
                      | Declaration
 ;
 
-DecAndStatStatement: DecAndStatStatement StatementError
+DecAndStatStatement: DecAndStatStatement Statement
                    | Statement
 ;
 
 StatementError: Statement
               | error SEMI
+;
+
+StatementErrorAux: StatementErrorAux StatementError
+                 | StatementError
 ;
 
 FunctionDeclaration: TypeSpec FunctionDeclarator SEMI;
@@ -80,12 +84,12 @@ ParameterDeclaration: TypeSpec ID
                     | TypeSpec
 ;
 
-Declaration: TypeSpec Declarator DeclarationAux SEMI
+Declaration: TypeSpec DeclarationAux SEMI
            | error SEMI
 ;
 
 DeclarationAux: DeclarationAux COMMA Declarator
-              | 
+              | Declarator
 ;
 
 TypeSpec: CHAR
@@ -95,24 +99,23 @@ TypeSpec: CHAR
         | DOUBLE
 ;
 
-Declarator: ID ASSIGN Expression
+Declarator: ID ASSIGN ExpressionAux
           | ID
 ;
 
-Statement: Expression SEMI
+Statement: ExpressionAux SEMI
          | SEMI
-         | LBRACE StatementError RBRACE
+         | LBRACE StatementErrorAux RBRACE
          | LBRACE RBRACE
-         | IF LPAR Expression RPAR Statement %prec IFPREC
-         | IF LPAR Expression RPAR Statement ELSE Statement
-         | WHILE LPAR Expression RPAR Statement 
-         | RETURN Expression SEMI
+         | IF LPAR ExpressionAux RPAR StatementError %prec IFPREC
+         | IF LPAR ExpressionAux RPAR StatementError ELSE StatementError
+         | WHILE LPAR ExpressionAux RPAR StatementError
+         | RETURN ExpressionAux SEMI
          | RETURN SEMI
          | LBRACE error RBRACE
 ;
 
 Expression: Expression ASSIGN Expression
-          | Expression COMMA Expression
           | Expression PLUS Expression
           | Expression MINUS Expression
           | Expression MUL Expression
@@ -132,14 +135,19 @@ Expression: Expression ASSIGN Expression
           | PLUS Expression
           | MINUS Expression
           | NOT Expression
-          | ID LPAR Expression RPAR
+          | ID LPAR ExpressionAux RPAR
           | ID LPAR RPAR
           | ID
           | INTLIT
           | CHRLIT
           | REALLIT
-          | LPAR Expression RPAR
+          | LPAR ExpressionAux RPAR
           | LPAR error RPAR
           | ID LPAR error RPAR
 ;
+
+ExpressionAux: ExpressionAux COMMA Expression
+             | Expression
+;
+
 %%
