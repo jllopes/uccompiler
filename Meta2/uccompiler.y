@@ -33,121 +33,129 @@ Rúben Telmo Domingues Leal
 %nonassoc IFPREC
 %nonassoc ELSE
 %%
-Program: Start;                                                                                                
+Program: Start;                                                                                                          
 
-Start: FunctionDefinition StartAux                                          
-     | FunctionDeclaration StartAux                                           
-     | Declaration StartAux                                           
+Start: FunctionDefinition StartAux                                              {}       
+     | FunctionDeclaration StartAux                                             {}
+     | Declaration StartAux                                                     {}
 ;   
 
-StartAux: StartAux FunctionDefinition
-        | StartAux FunctionDeclaration
-        | StartAux Declaration
+StartAux: StartAux FunctionDefinition                                           {}
+        | StartAux FunctionDeclaration                                          {}
+        | StartAux Declaration                                                  {}
         |
 ;
 
-FunctionDefinition: TypeSpec FunctionDeclarator FunctionBody
-
-FunctionBody: LBRACE RBRACE
-            | LBRACE DecAndStatDeclaration DecAndStatStatement RBRACE
-            | LBRACE DecAndStatDeclaration RBRACE
-            | LBRACE DecAndStatStatement RBRACE
+FunctionDefinition: TypeSpec FunctionDeclarator FunctionBody                    {}
 ;
 
-DecAndStatDeclaration: DecAndStatDeclaration Declaration
-                     | Declaration
+FunctionBody: LBRACE RBRACE                                                     {}
+            | LBRACE DecAndStatDeclaration DecAndStatStatement RBRACE           {}
+            | LBRACE DecAndStatDeclaration RBRACE                               {}
+            | LBRACE DecAndStatStatement RBRACE                                 {}
 ;
 
-DecAndStatStatement: DecAndStatStatement Statement
-                   | Statement
+DecAndStatDeclaration: DecAndStatDeclaration Declaration                        {}
+                     | Declaration                                              {}
 ;
 
-StatementError: Statement
-              | error SEMI
+DecAndStatStatement: DecAndStatStatement Statement                              {}
+                   | Statement                                                  {}
 ;
 
-StatementErrorAux: StatementErrorAux StatementError
-                 | StatementError
+StatementError: Statement                                                       {}
+              | error SEMI                                                      {}
 ;
 
-FunctionDeclaration: TypeSpec FunctionDeclarator SEMI;
-
-FunctionDeclarator: ID LPAR ParameterList RPAR;
-
-ParameterList: ParameterDeclaration ParameterListAux;
-
-ParameterListAux: ParameterListAux COMMA ParameterDeclaration
-                |
+StatementErrorAux: StatementErrorAux StatementError                             {}
+                 | StatementError                                               {}
 ;
 
-ParameterDeclaration: TypeSpec ID 
-                    | TypeSpec
+FunctionDeclaration: TypeSpec FunctionDeclarator SEMI                           {}
 ;
 
-Declaration: TypeSpec DeclarationAux SEMI
-           | error SEMI
+FunctionDeclarator: ID LPAR ParameterList RPAR                                  {}
 ;
 
-DeclarationAux: DeclarationAux COMMA Declarator
-              | Declarator
+ParameterList: ParameterDeclaration ParameterListAux                            {}
 ;
 
-TypeSpec: CHAR
-        | INT
-        | VOID
-        | SHORT
-        | DOUBLE
+ParameterListAux: ParameterListAux COMMA ParameterDeclaration                   {}
+                |                                                               {}
 ;
 
-Declarator: ID ASSIGN ExpressionAux
-          | ID
+ParameterDeclaration: TypeSpec ID                                               {}
+                    | TypeSpec                                                  {}
 ;
 
-Statement: ExpressionAux SEMI
-         | SEMI
-         | LBRACE StatementErrorAux RBRACE
-         | LBRACE RBRACE
-         | IF LPAR ExpressionAux RPAR StatementError %prec IFPREC
-         | IF LPAR ExpressionAux RPAR StatementError ELSE StatementError
-         | WHILE LPAR ExpressionAux RPAR StatementError
-         | RETURN ExpressionAux SEMI
-         | RETURN SEMI
-         | LBRACE error RBRACE
+Declaration: TypeSpec DeclarationAux SEMI                                       {}
+           | error SEMI                                                         {}
 ;
 
-Expression: Expression ASSIGN Expression
-          | Expression PLUS Expression
-          | Expression MINUS Expression
-          | Expression MUL Expression
-          | Expression DIV Expression
-          | Expression MOD Expression
-          | Expression OR Expression
-          | Expression AND Expression
-          | Expression BITWISEAND Expression
-          | Expression BITWISEOR Expression
-          | Expression BITWISEXOR Expression
-          | Expression EQ Expression
-          | Expression NE Expression
-          | Expression LE Expression
-          | Expression GE Expression
-          | Expression LT Expression
-          | Expression GT Expression
-          | PLUS Expression
-          | MINUS Expression
-          | NOT Expression
-          | ID LPAR ExpressionAux RPAR
-          | ID LPAR RPAR
-          | ID
-          | INTLIT
-          | CHRLIT
-          | REALLIT
-          | LPAR ExpressionAux RPAR
-          | LPAR error RPAR
-          | ID LPAR error RPAR
+DeclarationAux: DeclarationAux COMMA Declarator                                 {}
+              | Declarator                                                      {}
 ;
 
-ExpressionAux: ExpressionAux COMMA Expression
-             | Expression
+TypeSpec: CHAR                                                                  {}
+        | INT                                                                   {}
+        | VOID                                                                  {}
+        | SHORT                                                                 {}
+        | DOUBLE                                                                {}
+;
+
+Declarator: ID ASSIGN ExpressionAux                                             {}
+          | ID                                                                  {}
+;
+
+Statement: ExpressionAux SEMI                                                   {}
+         | SEMI                                                                 {}
+         | LBRACE StatementErrorAux RBRACE                                      {}
+         | LBRACE RBRACE                                                        {}
+         | IF LPAR ExpressionAux RPAR StatementError %prec IFPREC               {}
+         | IF LPAR ExpressionAux RPAR StatementError ELSE StatementError        {}
+         | WHILE LPAR ExpressionAux RPAR StatementError                         {}
+         | RETURN ExpressionAux SEMI                                            {}
+         | RETURN SEMI                                                          {}
+         | LBRACE error RBRACE                                                  {}
+;   
+
+Expression: Expression ASSIGN Expression                                        {}
+          | Expression PLUS Expression                                          {}
+          | Expression MINUS Expression                                         {}
+          | Expression MUL Expression                                           {}
+          | Expression DIV Expression                                           {}
+          | Expression MOD Expression                                           {}
+          | Expression OR Expression                                            {}
+          | Expression AND Expression                                           {}
+          | Expression BITWISEAND Expression                                    {}
+          | Expression BITWISEOR Expression                                     {}
+          | Expression BITWISEXOR Expression                                    {}
+          | Expression EQ Expression                                            {}
+          | Expression NE Expression                                            {}
+          | Expression LE Expression                                            {}
+          | Expression GE Expression                                            {}
+          | Expression LT Expression                                            {}
+          | Expression GT Expression                                            {}
+          | PLUS Expression                                                     {}
+          | MINUS Expression                                                    {}
+          | NOT Expression                                                      {}
+          | ID LPAR Expression ExpressionSecAux RPAR                            {}
+          | ID LPAR RPAR                                                        {}
+          | ID                                                                  {}
+          | INTLIT                                                              {}
+          | CHRLIT                                                              {}
+          | REALLIT                                                             {}
+          | LPAR ExpressionAux RPAR                                             {}
+          | LPAR error RPAR                                                     {}
+          | ID LPAR error RPAR                                                  {}
+;
+
+ExpressionAux: ExpressionAux COMMA Expression                                   {}
+             | Expression                                                       {}
+;
+
+ExpressionSecAux: ExpressionSecAux COMMA Expression                             {}
+                |                                                               {}
 ;
 
 %%
