@@ -5,6 +5,7 @@ Rúben Telmo Domingues Leal
 %{
     #include <stdio.h>
     #include <stdlib.h>
+    #include "tree.h"
     int yylex(void);
     void yyerror (char *s);
 %}
@@ -12,9 +13,12 @@ Rúben Telmo Domingues Leal
 
 %union{
     char* token;
+    struct Node *node;
 }
 
 %token <token> CHAR ELSE WHILE IF INT SHORT DOUBLE RETURN VOID AND OR BITWISEAND BITWISEOR BITWISEXOR MUL COMMA DIV EQ NE GE GT LE LT ASSIGN NOT LBRACE LPAR RBRACE RPAR MINUS PLUS MOD SEMI RESERVED ID INTLIT CHRLIT INVCHRLIT UNTCHRLIT REALLIT
+
+%type <node> Program Start FunctionDefinition FunctionDeclaration Declaration StartAux TypeSpec FunctionDeclarator FunctionBody DecAndStatDeclaration DecAndStatStatement StatementError Statement StatementErrorAux ParameterList ParameterDeclaration ParameterListAux DeclarationAux Declarator ExpressionAux Expression ExpressionSecAux
 
 
 %left COMMA
@@ -33,24 +37,26 @@ Rúben Telmo Domingues Leal
 %nonassoc IFPREC
 %nonassoc ELSE
 %%
-Program: Start;                                                                                                          
+Program: Start                                                                  {root = create_tree();
+                                                                                insert_child(root,$1);}
+;                                                                                                          
 
-Start: FunctionDefinition StartAux                                              {}       
-     | FunctionDeclaration StartAux                                             {}
-     | Declaration StartAux                                                     {}
+Start: FunctionDefinition StartAux                                              {$$ = create_node("FunctionDefinition", NULL);    insert_child($$, $1);}       
+     | FunctionDeclaration StartAux                                             {$$ = create_node("FunctionDeclaration", NULL); insert_child($$, $1);}
+     | Declaration StartAux                                                     {$$ = create_node("Declaration", NULL); insert_child($$, $1);}
 ;   
 
-StartAux: StartAux FunctionDefinition                                           {}
-        | StartAux FunctionDeclaration                                          {}
-        | StartAux Declaration                                                  {}
+StartAux: StartAux FunctionDefinition                                           {$$ = create_node("FuncDefinition", NULL); insert_child($$, $2);}
+        | StartAux FunctionDeclaration                                          {$$ = create_node("FunctionDeclaration", NULL); insert_child($$, $2);}
+        | StartAux Declaration                                                  {$$ = create_node("Declaration", NULL); insert_child($$, $2);}
         |
 ;
 
-FunctionDefinition: TypeSpec FunctionDeclarator FunctionBody                    {}
+FunctionDefinition: TypeSpec FunctionDeclarator FunctionBody                    {$$ = create_node(); insert_brother($$, $2); insert_brother($$, $3);}
 ;
 
-FunctionBody: LBRACE RBRACE                                                     {}
-            | LBRACE DecAndStatDeclaration DecAndStatStatement RBRACE           {}
+FunctionBody: LBRACE RBRACE                                                     {$$ = create_node("FuncBody"); insert_child($$, $1); insert_brother($1, $2);}
+            | LBRACE DecAndStatDeclaration DecAndStatStatement RBRACE           {$$ = create_node; insert_brother($$, $2); insert_brother($$,$3);}
             | LBRACE DecAndStatDeclaration RBRACE                               {}
             | LBRACE DecAndStatStatement RBRACE                                 {}
 ;
@@ -59,8 +65,8 @@ DecAndStatDeclaration: DecAndStatDeclaration Declaration                        
                      | Declaration                                              {}
 ;
 
-DecAndStatStatement: DecAndStatStatement Statement                              {}
-                   | Statement                                                  {}
+DecAndStatStatement: DecAndStatStatement StatementError                         {}
+                   | StatementError                                             {}
 ;
 
 StatementError: Statement                                                       {}
