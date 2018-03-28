@@ -11,9 +11,9 @@ struct Node{
 };
 
 Node* root;
-Node* create_tree();
-void insert_child(Node **node, char* token);
-Node* insert_brother(Node **node, char* token);
+Node* create_node(char* token, char* value);
+Node* insert_child(Node *node, Node *child_node);
+Node* insert_brother(Node *node, Node *brother_node);
 void print_tree(Node *root, int dots);
 void clear(Node *root);
 

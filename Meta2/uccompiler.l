@@ -6,6 +6,7 @@ Rúben Telmo Domingues Leal
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "tree.h"
 #include "y.tab.h"
 int line = 1, column = 1;
 int comment_line, comment_column;
@@ -126,6 +127,8 @@ int main(int argc, char **argv){
 		flag_syntax = 1;	
 		yyparse();
 	}
+	//print_child_brother(root);
+	print_tree(root, 0);
 	return 0;
 }
 
