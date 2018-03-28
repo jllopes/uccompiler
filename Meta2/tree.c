@@ -29,6 +29,20 @@ Node* insert_child(Node *node, Node *child_node) {
         node->child->brother = NULL;
         node->child->token = NULL;*/
         node->child = child_node;
+    } else {
+        Node *tmp, *prev;
+        prev = node->child;
+        tmp = node->child->brother;
+
+        while (tmp != NULL){ /* Goes through all the brothers */
+            prev = tmp;
+            tmp = tmp->brother;
+        }
+        prev->brother = (Node*) malloc(sizeof(Node));
+        /*prev->brother->child = NULL;
+        prev->brother->brother = NULL;
+        prev->brother->token = NULL;*/
+        prev->brother=child_node;
     }
     return node;
 }
