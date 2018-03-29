@@ -10,7 +10,7 @@ Rúben Telmo Domingues Leal
 #include "y.tab.h"
 int line = 1, column = 1;
 int comment_line, comment_column;
-int flag_lexical = 0, flag_syntax = 0;
+int flag_lexical = 0, flag_syntax = 0, flag_error = 0, flag_tree = 0;
 %}
 %X MULTICOMMENT
 CHAR "char"
@@ -122,13 +122,19 @@ int main(int argc, char **argv){
 			flag_lexical = 1;
 			yylex();
 		}
+		else if(strcmp(argv[1], "-t") == 0){
+			flag_tree = 1;
+			flag_syntax = 1;
+			yyparse();
+		}
 	}
 	else{
 		flag_syntax = 1;	
 		yyparse();
 	}
-	//print_child_brother(root);
-	print_tree(root, 0);
+	if(flag_error == 0 && flag_tree){
+		print_tree(root, 0);
+	}
 	return 0;
 }
 
@@ -137,5 +143,6 @@ int yywrap(){
 }
 
 void yyerror(char *s){
+	flag_error = 1;
 	printf("Line %d, col %d: %s: %s\n", line, (int)(column-yyleng), s, yytext);
 }

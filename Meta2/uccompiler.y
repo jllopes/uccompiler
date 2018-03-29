@@ -33,7 +33,7 @@ Rúben Telmo Domingues Leal
 %left MINUS PLUS
 %left MUL DIV MOD
 %right NOT 
-
+%nonassoc UNARY
 %nonassoc IFPREC
 %nonassoc ELSE
 %%
@@ -41,18 +41,18 @@ Program: Start                                                                  
                                                                                 insert_child(root,$1);}
 ;                                                                                                          
 
-Start: FunctionDefinition StartAux                                              {$$ = create_node("FuncDefinition", NULL); insert_child($$, $1); insert_brother($$, $2);}       
-     | FunctionDeclaration StartAux                                             {$$ = create_node("FuncDeclaration", NULL); insert_child($$, $1); insert_brother($$, $2);}
-     | Declaration StartAux                                                     {$$ = $1; insert_child($$, $1); insert_brother($$, $2);}
+Start: FunctionDefinition StartAux                                              {$$ = $1; if($2 != NULL){insert_brother($$, $2);}}       
+     | FunctionDeclaration StartAux                                             {$$ = $1; if($2 != NULL){insert_brother($$, $2);}}
+     | Declaration StartAux                                                     {$$ = $1; if($2 != NULL){insert_brother($$, $2);}}
 ;   
 
-StartAux: StartAux FunctionDefinition                                           {$$ = create_node("FuncDefinition", NULL); insert_child($$, $2); insert_brother($$, $1);}
-        | StartAux FunctionDeclaration                                          {$$ = create_node("FuncDeclaration", NULL); insert_child($$, $2); insert_brother($$, $1);}
-        | StartAux Declaration                                                  {$$ = $1; insert_child($$, $2); insert_brother($$, $1);}
-        |
+StartAux: StartAux FunctionDefinition                                           {if($1 != NULL){$$ = $1; insert_brother($$, $2);} else {$$ = $2;}}
+        | StartAux FunctionDeclaration                                          {if($1 != NULL){$$ = $1; insert_brother($$, $2);} else {$$ = $2;}}
+        | StartAux Declaration                                                  {if($1 != NULL){$$ = $1; insert_brother($$, $2);} else {$$ = $2;}}
+        |                                                                       {$$ = NULL;}
 ;
 
-FunctionDefinition: TypeSpec FunctionDeclarator FunctionBody                    {$$ = $1; insert_brother($$, $2); insert_brother($$, $3);}
+FunctionDefinition: TypeSpec FunctionDeclarator FunctionBody                    {$$ = create_node("FuncDefinition", NULL); insert_child($$, $1); insert_child($$, $2); insert_child($$, $3);}
 ;
 
 FunctionBody: LBRACE RBRACE                                                     {$$ = create_node("FuncBody", NULL);}
@@ -65,7 +65,7 @@ DecAndStatDeclaration: DecAndStatDeclaration Declaration                        
                      | Declaration                                              {$$ = $1;}
 ;
 
-DecAndStatStatement: DecAndStatStatement Statement                              {$$ = $1; insert_brother($$, $2);}
+DecAndStatStatement: DecAndStatStatement StatementError                         {$$ = $1; insert_brother($$, $2);}
                    | Statement                                                  {$$ = $1;}
 ;
 
@@ -73,28 +73,29 @@ StatementError: Statement                                                       
               | error SEMI                                                      {$$ = NULL;}
 ;
 
-StatementErrorAux: StatementErrorAux StatementError                             {
-                                                                                  if($1 || $2 != NULL){
-                                                                                    $$ = create_node("StatList", NULL); 
-                                                                                    if($1 != NULL){
-                                                                                      insert_child($$, $1); 
-                                                                                      if($2 != NULL){
-                                                                                        insert_child($$, $2);
-                                                                                      }
-                                                                                    }
-                                                                                  } else{
-                                                                                    if($2 != NULL){
+StatementErrorAux: StatementErrorAux StatementError                             { 
+                                                                                  if($1 != NULL){
+                                                                                    $$ = create_node("StatList", NULL);
+                                                                                    insert_child($$, $1);
+                                                                                    if($2 != NULL)
                                                                                       insert_child($$, $2);
+                                                                                  } else {
+                                                                                    if($2 != NULL){
+                                                                                      $$ = create_node("StatList", NULL); 
+                                                                                      insert_child($$, $2);
+                                                                                    }
+                                                                                    else {
+                                                                                      $$ = NULL;
                                                                                     }
                                                                                   }
                                                                                 }
 
                  | StatementError                                               {
-                                                                                  if($1 != NULL){$$ = $1;}
+                                                                                  if($1 != NULL){$$ = create_node("StatList", NULL); insert_child($$, $1);}
                                                                                 }
 ;
 
-FunctionDeclaration: TypeSpec FunctionDeclarator SEMI                           {$$ = $1; insert_brother($$, $2);}
+FunctionDeclaration: TypeSpec FunctionDeclarator SEMI                           {$$ = create_node("FuncDeclaration", NULL); insert_child($$, $1); insert_child($$, $2);}
 ;
 
 FunctionDeclarator: ID LPAR ParameterList RPAR                                  {$$ = create_node("Id",$1); insert_brother($$, $3);}
@@ -142,21 +143,21 @@ Statement: ExpressionAux SEMI                                                   
 
          | LBRACE RBRACE                                                        {$$ = NULL;}
 
-         | IF LPAR ExpressionAux RPAR StatementError %prec IFPREC               { /* São obrigatórios 3 filhos, no caso de ser só if o terceiro será NULL */
+         | IF LPAR ExpressionAux RPAR Statement %prec IFPREC                    { /* São obrigatórios 3 filhos, no caso de ser só if o terceiro será NULL */
                                                                                   $$ = create_node("If", NULL); 
                                                                                   insert_child($$, $3); 
                                                                                   insert_child($$, $5); 
                                                                                   insert_child($$, NULL);
                                                                                 } 
 
-         | IF LPAR ExpressionAux RPAR StatementError ELSE StatementError        {
+         | IF LPAR ExpressionAux RPAR Statement ELSE Statement                  {
                                                                                   $$ = create_node("If", NULL); 
                                                                                   insert_child($$, $3); 
                                                                                   insert_child($$, $5); 
                                                                                   insert_child($$, $7);
                                                                                 }
 
-         | WHILE LPAR ExpressionAux RPAR StatementError                         {
+         | WHILE LPAR ExpressionAux RPAR Statement                              {
                                                                                   $$ = create_node("While", NULL); 
                                                                                   insert_child($$, $3); 
                                                                                   insert_child($$, $5);
@@ -192,11 +193,11 @@ Expression: Expression ASSIGN Expression                                        
           | Expression GE Expression                                            {$$ = create_node("Ge", NULL); insert_child($$, $1); insert_child($$, $3);}
           | Expression LT Expression                                            {$$ = create_node("Lt", NULL); insert_child($$, $1); insert_child($$, $3);}
           | Expression GT Expression                                            {$$ = create_node("Gt", NULL); insert_child($$, $1); insert_child($$, $3);}
-          | PLUS Expression                                                     {$$ = create_node("Plus", NULL); insert_child($$, $2);}
-          | MINUS Expression                                                    {$$ = create_node("Minus", NULL); insert_child($$, $2);}
+          | PLUS Expression %prec UNARY                                         {$$ = create_node("Plus", NULL); insert_child($$, $2);}
+          | MINUS Expression %prec UNARY                                        {$$ = create_node("Minus", NULL); insert_child($$, $2);}
           | NOT Expression                                                      {$$ = create_node("Not", NULL); insert_child($$, $2);}
-          | ID LPAR Expression ExpressionSecAux RPAR                            {$$ = create_node("Call", NULL); insert_child($$, create_node("Id",$1)); insert_child($$, $3); insert_child($$, $4);}
-          | ID LPAR RPAR                                                        {$$ = create_node("Call", NULL); insert_child($$, create_node("Id",$1)); insert_child($$, NULL);} /* Tem de ter pelo menos um filho */
+          | ID LPAR Expression ExpressionSecAux RPAR                            {$$ = create_node("Call", NULL); insert_child($$, create_node("Id", $1)); insert_child($$, $3);}
+          | ID LPAR RPAR                                                        {$$ = create_node("Call", NULL); insert_child($$, create_node("Id", $1));}
           | ID                                                                  {$$ = create_node("Id", $1);}
           | INTLIT                                                              {$$ = create_node("IntLit", $1);}
           | CHRLIT                                                              {$$ = create_node("ChrLit", $1);}
@@ -210,7 +211,7 @@ ExpressionAux: ExpressionAux COMMA Expression                                   
              | Expression                                                       {$$ = $1;}
 ;
 
-ExpressionSecAux: ExpressionSecAux COMMA Expression                             {$$ = $1; insert_brother($1, $3);}
+ExpressionSecAux: ExpressionSecAux COMMA Expression                             {$$ = $1; insert_brother($$, $3);}
                 |                                                               {$$ = NULL;}
 ;
 
