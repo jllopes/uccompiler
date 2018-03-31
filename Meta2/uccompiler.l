@@ -143,6 +143,6 @@ int yywrap(){
 }
 
 void yyerror(char *s){
-	//flag_error = 1;
+	flag_error = 1;
 	printf("Line %d, col %d: %s: %s\n", line, (int)(column-yyleng), s, yytext);
 }
