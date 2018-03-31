@@ -18,7 +18,7 @@ Rúben Telmo Domingues Leal
 
 %token <token> CHAR ELSE WHILE IF INT SHORT DOUBLE RETURN VOID AND OR BITWISEAND BITWISEOR BITWISEXOR MUL COMMA DIV EQ NE GE GT LE LT ASSIGN NOT LBRACE LPAR RBRACE RPAR MINUS PLUS MOD SEMI RESERVED ID INTLIT CHRLIT INVCHRLIT UNTCHRLIT REALLIT
 
-%type <node> Program Start FunctionDefinition FunctionDeclaration Declaration StartAux TypeSpec FunctionDeclarator FunctionBody DecAndStatDeclaration DecAndStatStatement StatementError Statement StatementErrorAux ParameterList ParameterDeclaration ParameterListAux DeclarationAux Declarator ExpressionAux Expression ExpressionSecAux
+%type <node> Program Start FunctionDefinition FunctionDeclaration Declaration StartAux TypeSpec FunctionDeclarator FunctionBody DeclarationsAndStatements Statement StatementAux StatementSecAux ParameterList ParameterDeclaration ParameterListAux DeclarationAux Declarator ExpressionAux Expression ExpressionSecAux
 
 
 %left COMMA
@@ -56,43 +56,13 @@ FunctionDefinition: TypeSpec FunctionDeclarator FunctionBody                    
 ;
 
 FunctionBody: LBRACE RBRACE                                                     {$$ = create_node("FuncBody", NULL);}
-            | LBRACE DecAndStatDeclaration DecAndStatStatement RBRACE           {$$ = create_node("FuncBody", NULL); insert_child($$, $2); insert_child($$,$3);}
-            | LBRACE DecAndStatDeclaration RBRACE                               {$$ = create_node("FuncBody", NULL); insert_child($$, $2);}
-            | LBRACE DecAndStatStatement RBRACE                                 {$$ = create_node("FuncBody", NULL); insert_child($$, $2);}
+            | LBRACE DeclarationsAndStatements RBRACE                           {$$ = create_node("FuncBody", NULL); insert_child($$, $2);}
 ;
 
-DecAndStatDeclaration: DecAndStatDeclaration Declaration                        {$$ = $1; insert_brother($$, $2);}
-                     | Declaration                                              {$$ = $1;}
-;
-
-DecAndStatStatement: DecAndStatStatement StatementError                         {$$ = $1; insert_brother($$, $2);}
-                   | Statement                                                  {$$ = $1;}
-;
-
-StatementError: Statement                                                       {$$ = $1;}
-              | error SEMI                                                      {$$ = NULL;}
-;
-
-StatementErrorAux: StatementErrorAux StatementError                             { 
-                                                                                  if($1 != NULL){
-                                                                                    $$ = create_node("StatList", NULL);
-                                                                                    insert_child($$, $1);
-                                                                                    if($2 != NULL)
-                                                                                      insert_child($$, $2);
-                                                                                  } else {
-                                                                                    if($2 != NULL){
-                                                                                      $$ = create_node("StatList", NULL); 
-                                                                                      insert_child($$, $2);
-                                                                                    }
-                                                                                    else {
-                                                                                      $$ = NULL;
-                                                                                    }
-                                                                                  }
-                                                                                }
-
-                 | StatementError                                               {
-                                                                                  if($1 != NULL){$$ = create_node("StatList", NULL); insert_child($$, $1);}
-                                                                                }
+DeclarationsAndStatements: DeclarationsAndStatements Statement                  {if($1 != NULL){$$ = $1; insert_brother($$,$2);}else{$$ = $2;}}
+                         | DeclarationsAndStatements Declaration                {if($1 != NULL){$$ = $1; insert_brother($$,$2);}else{$$ = $2;}}
+                         | Statement                                            {$$ = $1;}
+                         | Declaration                                          {$$ = $1;}
 ;
 
 FunctionDeclaration: TypeSpec FunctionDeclarator SEMI                           {$$ = create_node("FuncDeclaration", NULL); insert_child($$, $1); insert_child($$, $2);}
@@ -127,53 +97,37 @@ TypeSpec: CHAR                                                                  
         | DOUBLE                                                                {$$ = create_node("Double", NULL);}
 ;
 
-Declarator: ID ASSIGN ExpressionAux                                             {
-                                                                                  $$ = create_node("Id", $1); 
-                                                                                  insert_brother($$, $3);
-                                                                                }
-
+Declarator: ID ASSIGN ExpressionAux                                             {$$ = create_node("Id", $1); insert_brother($$, $3);}
           | ID                                                                  {$$ = create_node("Id", $1);}
 ;
 
 Statement: ExpressionAux SEMI                                                   {$$ = $1;}
-
          | SEMI                                                                 {$$ = NULL;}
-
-         | LBRACE StatementErrorAux RBRACE                                      {$$ = $2;}
-
+         | LBRACE StatementAux RBRACE                                           {$$ = $2;}
          | LBRACE RBRACE                                                        {$$ = NULL;}
-
-         | IF LPAR ExpressionAux RPAR Statement %prec IFPREC                    { /* São obrigatórios 3 filhos, no caso de ser só if o terceiro será NULL */
-                                                                                  $$ = create_node("If", NULL); 
-                                                                                  insert_child($$, $3); 
-                                                                                  insert_child($$, $5); 
-                                                                                  insert_child($$, NULL);
-                                                                                } 
-
-         | IF LPAR ExpressionAux RPAR Statement ELSE Statement                  {
-                                                                                  $$ = create_node("If", NULL); 
-                                                                                  insert_child($$, $3); 
-                                                                                  insert_child($$, $5); 
-                                                                                  insert_child($$, $7);
-                                                                                }
-
-         | WHILE LPAR ExpressionAux RPAR Statement                              {
-                                                                                  $$ = create_node("While", NULL); 
-                                                                                  insert_child($$, $3); 
-                                                                                  insert_child($$, $5);
-                                                                                }
-
-         | RETURN ExpressionAux SEMI                                            {
-                                                                                  $$ = create_node("Return", NULL); 
-                                                                                  insert_child($$, $2);
-                                                                                }
-
-         | RETURN SEMI                                                          {
-                                                                                  $$ = create_node("Return", NULL); 
-                                                                                  insert_child($$, NULL);
-                                                                                }
-
+         | IF LPAR ExpressionAux RPAR Statement %prec IFPREC                    {$$ = create_node("If", NULL); insert_child($$, $3); insert_child($$, $5); insert_child($$, NULL);} 
+         | IF LPAR ExpressionAux RPAR Statement ELSE Statement                  {$$ = create_node("If", NULL); insert_child($$, $3); insert_child($$, $5); insert_child($$, $7);}
+         | WHILE LPAR ExpressionAux RPAR Statement                              {$$ = create_node("While", NULL); insert_child($$, $3); insert_child($$, $5);}
+         | RETURN ExpressionAux SEMI                                            {$$ = create_node("Return", NULL); insert_child($$, $2);}
+         | RETURN SEMI                                                          {$$ = create_node("Return", NULL); insert_child($$, NULL);}
          | LBRACE error RBRACE                                                  {$$ = NULL;}
+;   
+
+StatementAux: StatementAux StatementSecAux                                      {if($1 != NULL){$$ = $1; if($2 != NULL){insert_brother($$,$2);}}else if($2 != NULL){$$ = $2;}}
+            | StatementSecAux                                                   {if($1 != NULL){$$ = $1;}}
+;
+
+StatementSecAux: ExpressionAux SEMI                                             {$$ = $1;}
+         | SEMI                                                                 {$$ = NULL;}
+         | LBRACE StatementAux RBRACE                                           {$$ = $2;}
+         | LBRACE RBRACE                                                        {$$ = NULL;}
+         | IF LPAR ExpressionAux RPAR Statement %prec IFPREC                    {$$ = create_node("If", NULL); insert_child($$, $3); insert_child($$, $5); insert_child($$, NULL);} 
+         | IF LPAR ExpressionAux RPAR Statement ELSE Statement                  {$$ = create_node("If", NULL); insert_child($$, $3); insert_child($$, $5); insert_child($$, $7);}
+         | WHILE LPAR ExpressionAux RPAR Statement                              {$$ = create_node("While", NULL); insert_child($$, $3); insert_child($$, $5);}
+         | RETURN ExpressionAux SEMI                                            {$$ = create_node("Return", NULL); insert_child($$, $2);}
+         | RETURN SEMI                                                          {$$ = create_node("Return", NULL); insert_child($$, NULL);}
+         | LBRACE error RBRACE                                                  {$$ = NULL;}
+         | error SEMI                                                           {$$ = NULL;}
 ;   
 
 Expression: Expression ASSIGN Expression                                        {$$ = create_node("Store", NULL); insert_child($$, $1); insert_child($$, $3);}
