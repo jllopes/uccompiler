@@ -41,9 +41,9 @@ Program: Start                                                                  
                                                                                 insert_child(root,$1);}}
 ;                                                                                                          
 
-Start: FunctionDefinition StartAux                                              {$$ = $1; if($2 != NULL){insert_brother($$, $2);}}       
-     | FunctionDeclaration StartAux                                             {$$ = $1; if($2 != NULL){insert_brother($$, $2);}}
-     | Declaration StartAux                                                     {$$ = $1; if($2 != NULL){insert_brother($$, $2);}}
+Start: FunctionDefinition StartAux                                              {$$ = $1; insert_brother($$, $2);}       
+     | FunctionDeclaration StartAux                                             {$$ = $1; insert_brother($$, $2);}
+     | Declaration StartAux                                                     {if($1 != NULL){$$ = $1; insert_brother($$, $2);}else{$$=$2;}}
 ;   
 
 StartAux: StartAux FunctionDefinition                                           {if($1 != NULL){$$ = $1; insert_brother($$, $2);} else {$$ = $2;}}
@@ -59,8 +59,8 @@ FunctionBody: LBRACE RBRACE                                                     
             | LBRACE DeclarationsAndStatements RBRACE                           {$$ = create_node("FuncBody", NULL); if($2 != NULL){insert_child($$, $2);}}
 ;
 
-DeclarationsAndStatements: DeclarationsAndStatements Statement                  {if($1 != NULL){$$ = $1; if($2!=NULL){insert_brother($$,$2);}}else{$$ = $2;}}
-                         | DeclarationsAndStatements Declaration                {if($1 != NULL){$$ = $1; if($2!=NULL){insert_brother($$,$2);}}else{$$ = $2;}}
+DeclarationsAndStatements: DeclarationsAndStatements Statement                  {if($1 != NULL){$$ = $1; insert_brother($$,$2);}else{$$ = $2;}}
+                         | DeclarationsAndStatements Declaration                {if($1 != NULL){$$ = $1; insert_brother($$,$2);}else{$$ = $2;}}
                          | Statement                                            {$$=$1;}
                          | Declaration                                          {$$=$1;}
 ;
@@ -71,7 +71,7 @@ FunctionDeclaration: TypeSpec FunctionDeclarator SEMI                           
 FunctionDeclarator: ID LPAR ParameterList RPAR                                  {$$ = create_node("Id",$1); insert_brother($$, $3);}
 ;
 
-ParameterList: ParameterDeclaration ParameterListAux                            {$$ = create_node("ParamList", NULL); insert_child($$, $1); if($2 != NULL){insert_child($$, $2);}}
+ParameterList: ParameterDeclaration ParameterListAux                            {$$ = create_node("ParamList", NULL); insert_child($$, $1); insert_child($$, $2);}
 ;
 
 ParameterListAux: COMMA ParameterDeclaration ParameterListAux                   {$$ = $2; insert_brother($$, $3);}
@@ -103,18 +103,18 @@ Declarator: ID ASSIGN ExpressionAux                                             
 
 Statement: ExpressionAux SEMI                                                   {$$ = $1;}
          | SEMI                                                                 {$$ = NULL;}
-         | LBRACE StatementErrorAux RBRACE                                      {if($2 != NULL){if($2->brother != NULL){$$ = create_node("StatList", NULL); insert_child($$, $2);}}else{$$ = $2;}}
+         | LBRACE StatementErrorAux RBRACE                                      {if($2 != NULL && $2->brother != NULL){$$ = create_node("StatList", NULL); insert_child($$, $2);}else{$$ = $2;}}
          | LBRACE RBRACE                                                        {$$ = NULL;}
-         | IF LPAR ExpressionAux RPAR Statement %prec IFPREC                    {$$ = create_node("If", NULL); insert_child($$, $3); if($5 != NULL){insert_child($$, $5);}else{insert_child($$, create_node("Null", NULL));} insert_child($$, create_node("Null", NULL));} 
-         | IF LPAR ExpressionAux RPAR Statement ELSE Statement                  {$$ = create_node("If", NULL); insert_child($$, $3); insert_child($$, $5); insert_child($$, $7);}
-         | WHILE LPAR ExpressionAux RPAR Statement                              {$$ = create_node("While", NULL); insert_child($$, $3); insert_child($$, $5);}
+         | IF LPAR ExpressionAux RPAR StatementError %prec IFPREC               {$$ = create_node("If", NULL); insert_child($$, $3); if($5 == NULL){insert_child($$, create_node("Null", NULL));} else if($5 != NULL && $5->brother != NULL){insert_child($$, create_node("StatList", NULL)); insert_child($$->child->brother, $5);} else{insert_child($$, $5);}} 
+         | IF LPAR ExpressionAux RPAR StatementError ELSE StatementError        {$$ = create_node("If", NULL); insert_child($$, $3); if($5 == NULL){insert_child($$, create_node("Null", NULL));} else if($5 != NULL && $5->brother != NULL){insert_child($$, create_node("StatList", NULL)); insert_child($$->child->brother, $5);} else{insert_child($$, $5);} if($7 == NULL){insert_child($$, create_node("Null", NULL));} else if($7 != NULL && $7->brother != NULL){insert_child($$, create_node("StatList", NULL)); insert_child($$->child->brother->brother, $7);} else{insert_child($$, $7);}}
+         | WHILE LPAR ExpressionAux RPAR StatementError                         {$$ = create_node("While", NULL); insert_child($$, $3); insert_child($$, $5);}
          | RETURN ExpressionAux SEMI                                            {$$ = create_node("Return", NULL); insert_child($$, $2);}
          | RETURN SEMI                                                          {$$ = create_node("Return", NULL); insert_child($$, create_node("Null", NULL));}
          | LBRACE error RBRACE                                                  {$$ = NULL;}
 ;   
 
-StatementErrorAux: StatementErrorAux StatementError                             {if($1 != NULL){$$ = $1; if($2 != NULL){insert_brother($$,$2);}}else if($2 != NULL){$$ = $2;}}
-            | StatementError                                                    {if($1 != NULL){$$ = $1;}}
+StatementErrorAux: StatementErrorAux StatementError                             {if($1 != NULL){$$ = $1; insert_brother($$,$2);}else{$$ = $2;}}
+            | StatementError                                                    {$$ = $1;}
 ;
 
 StatementError: Statement                                                       {$$ = $1;}
