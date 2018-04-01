@@ -37,8 +37,8 @@ Rúben Telmo Domingues Leal
 %nonassoc IFPREC
 %nonassoc ELSE
 %%
-Program: Start                                                                  {if($1!=NULL){root = create_node("Program", NULL);
-                                                                                insert_child(root,$1);}}
+Program: Start                                                                  {root = create_node("Program", NULL);
+                                                                                insert_child(root,$1);}
 ;                                                                                                          
 
 Start: FunctionDefinition StartAux                                              {$$ = $1; insert_brother($$, $2);}       
@@ -105,7 +105,7 @@ Statement: ExpressionAux SEMI                                                   
          | SEMI                                                                 {$$ = NULL;}
          | LBRACE StatementErrorAux RBRACE                                      {if($2 != NULL && $2->brother != NULL){$$ = create_node("StatList", NULL); insert_child($$, $2);}else{$$ = $2;}}
          | LBRACE RBRACE                                                        {$$ = NULL;}
-         | IF LPAR ExpressionAux RPAR StatementError %prec IFPREC               {$$ = create_node("If", NULL); insert_child($$, $3); if($5 == NULL){insert_child($$, create_node("Null", NULL));} else if($5 != NULL && $5->brother != NULL){insert_child($$, create_node("StatList", NULL)); insert_child($$->child->brother, $5);} else{insert_child($$, $5);}} 
+         | IF LPAR ExpressionAux RPAR StatementError %prec IFPREC               {$$ = create_node("If", NULL); insert_child($$, $3); if($5 == NULL){insert_child($$, create_node("Null", NULL));} else if($5 != NULL && $5->brother != NULL){insert_child($$, create_node("StatList", NULL)); insert_child($$->child->brother, $5);} else{insert_child($$, $5);} insert_child($$, create_node("Null", NULL));}
          | IF LPAR ExpressionAux RPAR StatementError ELSE StatementError        {$$ = create_node("If", NULL); insert_child($$, $3); if($5 == NULL){insert_child($$, create_node("Null", NULL));} else if($5 != NULL && $5->brother != NULL){insert_child($$, create_node("StatList", NULL)); insert_child($$->child->brother, $5);} else{insert_child($$, $5);} if($7 == NULL){insert_child($$, create_node("Null", NULL));} else if($7 != NULL && $7->brother != NULL){insert_child($$, create_node("StatList", NULL)); insert_child($$->child->brother->brother, $7);} else{insert_child($$, $7);}}
          | WHILE LPAR ExpressionAux RPAR StatementError                         {$$ = create_node("While", NULL); insert_child($$, $3); insert_child($$, $5);}
          | RETURN ExpressionAux SEMI                                            {$$ = create_node("Return", NULL); insert_child($$, $2);}
@@ -121,27 +121,27 @@ StatementError: Statement                                                       
                | error SEMI                                                     {$$ = NULL;}
 ;
 
-Expression: Expression ASSIGN Expression                                        {$$ = create_node("Store", NULL); insert_child($$, $1); insert_child($$, $3);}
-          | Expression PLUS Expression                                          {$$ = create_node("Add", NULL); insert_child($$, $1); insert_child($$, $3);}
-          | Expression MINUS Expression                                         {$$ = create_node("Sub", NULL); insert_child($$, $1); insert_child($$, $3);}
-          | Expression MUL Expression                                           {$$ = create_node("Mul", NULL); insert_child($$, $1); insert_child($$, $3);}
-          | Expression DIV Expression                                           {$$ = create_node("Div", NULL); insert_child($$, $1); insert_child($$, $3);}
-          | Expression MOD Expression                                           {$$ = create_node("Mod", NULL); insert_child($$, $1); insert_child($$, $3);}
-          | Expression OR Expression                                            {$$ = create_node("Or", NULL); insert_child($$, $1); insert_child($$, $3);}
-          | Expression AND Expression                                           {$$ = create_node("And", NULL); insert_child($$, $1); insert_child($$, $3);}
-          | Expression BITWISEAND Expression                                    {$$ = create_node("BitWiseAnd", NULL); insert_child($$, $1); insert_child($$, $3);}
-          | Expression BITWISEOR Expression                                     {$$ = create_node("BitWiseOr", NULL); insert_child($$, $1); insert_child($$, $3);}
-          | Expression BITWISEXOR Expression                                    {$$ = create_node("BitWiseXor", NULL); insert_child($$, $1); insert_child($$, $3);}
-          | Expression EQ Expression                                            {$$ = create_node("Eq", NULL); insert_child($$, $1); insert_child($$, $3);}
-          | Expression NE Expression                                            {$$ = create_node("Ne", NULL); insert_child($$, $1); insert_child($$, $3);}
-          | Expression LE Expression                                            {$$ = create_node("Le", NULL); insert_child($$, $1); insert_child($$, $3);}
-          | Expression GE Expression                                            {$$ = create_node("Ge", NULL); insert_child($$, $1); insert_child($$, $3);}
-          | Expression LT Expression                                            {$$ = create_node("Lt", NULL); insert_child($$, $1); insert_child($$, $3);}
-          | Expression GT Expression                                            {$$ = create_node("Gt", NULL); insert_child($$, $1); insert_child($$, $3);}
-          | PLUS Expression %prec UNARY                                         {$$ = create_node("Plus", NULL); insert_child($$, $2);}
-          | MINUS Expression %prec UNARY                                        {$$ = create_node("Minus", NULL); insert_child($$, $2);}
-          | NOT Expression                                                      {$$ = create_node("Not", NULL); insert_child($$, $2);}
-          | ID LPAR Expression ExpressionSecAux RPAR                            {$$ = create_node("Call", NULL); insert_child($$, create_node("Id", $1)); insert_child($$, $3);}
+Expression: Expression ASSIGN Expression                                        {$$ = create_node("Store", NULL); if($1 == NULL){insert_child($$, create_node("Null", NULL));}else{insert_child($$, $1);} if($3 == NULL){insert_child($$, create_node("Null", NULL));}else{insert_child($$, $3);}}
+          | Expression PLUS Expression                                          {$$ = create_node("Add", NULL); if($1 == NULL){insert_child($$, create_node("Null", NULL));}else{insert_child($$, $1);} if($3 == NULL){insert_child($$, create_node("Null", NULL));}else{insert_child($$, $3);}}
+          | Expression MINUS Expression                                         {$$ = create_node("Sub", NULL); if($1 == NULL){insert_child($$, create_node("Null", NULL));}else{insert_child($$, $1);} if($3 == NULL){insert_child($$, create_node("Null", NULL));}else{insert_child($$, $3);}}
+          | Expression MUL Expression                                           {$$ = create_node("Mul", NULL); if($1 == NULL){insert_child($$, create_node("Null", NULL));}else{insert_child($$, $1);} if($3 == NULL){insert_child($$, create_node("Null", NULL));}else{insert_child($$, $3);}}
+          | Expression DIV Expression                                           {$$ = create_node("Div", NULL); if($1 == NULL){insert_child($$, create_node("Null", NULL));}else{insert_child($$, $1);} if($3 == NULL){insert_child($$, create_node("Null", NULL));}else{insert_child($$, $3);}}
+          | Expression MOD Expression                                           {$$ = create_node("Mod", NULL); if($1 == NULL){insert_child($$, create_node("Null", NULL));}else{insert_child($$, $1);} if($3 == NULL){insert_child($$, create_node("Null", NULL));}else{insert_child($$, $3);}}
+          | Expression OR Expression                                            {$$ = create_node("Or", NULL); if($1 == NULL){insert_child($$, create_node("Null", NULL));}else{insert_child($$, $1);} if($3 == NULL){insert_child($$, create_node("Null", NULL));}else{insert_child($$, $3);}}
+          | Expression AND Expression                                           {$$ = create_node("And", NULL); if($1 == NULL){insert_child($$, create_node("Null", NULL));}else{insert_child($$, $1);} if($3 == NULL){insert_child($$, create_node("Null", NULL));}else{insert_child($$, $3);}}
+          | Expression BITWISEAND Expression                                    {$$ = create_node("BitWiseAnd", NULL); if($1 == NULL){insert_child($$, create_node("Null", NULL));}else{insert_child($$, $1);} if($3 == NULL){insert_child($$, create_node("Null", NULL));}else{insert_child($$, $3);}}
+          | Expression BITWISEOR Expression                                     {$$ = create_node("BitWiseOr", NULL); if($1 == NULL){insert_child($$, create_node("Null", NULL));}else{insert_child($$, $1);} if($3 == NULL){insert_child($$, create_node("Null", NULL));}else{insert_child($$, $3);}}
+          | Expression BITWISEXOR Expression                                    {$$ = create_node("BitWiseXor", NULL); if($1 == NULL){insert_child($$, create_node("Null", NULL));}else{insert_child($$, $1);} if($3 == NULL){insert_child($$, create_node("Null", NULL));}else{insert_child($$, $3);}}
+          | Expression EQ Expression                                            {$$ = create_node("Eq", NULL); if($1 == NULL){insert_child($$, create_node("Null", NULL));}else{insert_child($$, $1);} if($3 == NULL){insert_child($$, create_node("Null", NULL));}else{insert_child($$, $3);}}
+          | Expression NE Expression                                            {$$ = create_node("Ne", NULL); if($1 == NULL){insert_child($$, create_node("Null", NULL));}else{insert_child($$, $1);} if($3 == NULL){insert_child($$, create_node("Null", NULL));}else{insert_child($$, $3);}}
+          | Expression LE Expression                                            {$$ = create_node("Le", NULL); if($1 == NULL){insert_child($$, create_node("Null", NULL));}else{insert_child($$, $1);} if($3 == NULL){insert_child($$, create_node("Null", NULL));}else{insert_child($$, $3);}}
+          | Expression GE Expression                                            {$$ = create_node("Ge", NULL); if($1 == NULL){insert_child($$, create_node("Null", NULL));}else{insert_child($$, $1);} if($3 == NULL){insert_child($$, create_node("Null", NULL));}else{insert_child($$, $3);}}
+          | Expression LT Expression                                            {$$ = create_node("Lt", NULL); if($1 == NULL){insert_child($$, create_node("Null", NULL));}else{insert_child($$, $1);} if($3 == NULL){insert_child($$, create_node("Null", NULL));}else{insert_child($$, $3);}}
+          | Expression GT Expression                                            {$$ = create_node("Gt", NULL); if($1 == NULL){insert_child($$, create_node("Null", NULL));}else{insert_child($$, $1);} if($3 == NULL){insert_child($$, create_node("Null", NULL));}else{insert_child($$, $3);}}
+          | PLUS Expression %prec UNARY                                         {$$ = create_node("Plus", NULL); if($2 == NULL){insert_child($$, create_node("Null", NULL));}else{insert_child($$, $2);}}
+          | MINUS Expression %prec UNARY                                        {$$ = create_node("Minus", NULL); if($2 == NULL){insert_child($$, create_node("Null", NULL));}else{insert_child($$, $2);}}
+          | NOT Expression                                                      {$$ = create_node("Not", NULL); if($2 == NULL){insert_child($$, create_node("Null", NULL));}else{insert_child($$, $2);}}
+          | ID LPAR Expression ExpressionSecAux RPAR                            {$$ = create_node("Call", NULL); insert_child($$, create_node("Id", $1)); if($3!=NULL){insert_child($$, $3);} if($4!=NULL){insert_child($$, $4);}}
           | ID LPAR RPAR                                                        {$$ = create_node("Call", NULL); insert_child($$, create_node("Id", $1));}
           | ID                                                                  {$$ = create_node("Id", $1);}
           | INTLIT                                                              {$$ = create_node("IntLit", $1);}
@@ -152,11 +152,11 @@ Expression: Expression ASSIGN Expression                                        
           | ID LPAR error RPAR                                                  {$$ = NULL;}
 ;
 
-ExpressionAux: ExpressionAux COMMA Expression                                   {$$ = create_node("Comma", NULL); insert_child($$, $1); insert_child($$, $3);}
+ExpressionAux: ExpressionAux COMMA Expression                                   {$$ = create_node("Comma", NULL); if($1 != NULL){insert_child($$, $1);}else{insert_child($$, create_node("Null", NULL));} if($3 != NULL){insert_child($$, $3);}else{insert_child($$, create_node("Null", NULL));}}
              | Expression                                                       {$$ = $1;}
 ;
 
-ExpressionSecAux: ExpressionSecAux COMMA Expression                             {$$ = $1; insert_brother($$, $3);}
+ExpressionSecAux: ExpressionSecAux COMMA Expression                             {$$ = create_node("Comma", NULL); if($1 != NULL){insert_child($$, $1);}else{insert_child($$, create_node("Null", NULL));} if($3 != NULL){insert_child($$, $3);}else{insert_child($$, create_node("Null", NULL));}}
                 |                                                               {$$ = NULL;}
 ;
 
