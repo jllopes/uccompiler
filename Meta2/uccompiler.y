@@ -82,12 +82,12 @@ ParameterDeclaration: TypeSpec ID                                               
                     | TypeSpec                                                  {$$ = create_node("ParamDeclaration", NULL); insert_child($$, $1);}
 ;
 
-Declaration: TypeSpec DeclarationAux SEMI                                       {$$ = create_node("Declaration", NULL); insert_child($$, $1); insert_child($$, $2);}
+Declaration: TypeSpec Declarator DeclarationAux SEMI                            {$$ = $2; if($3 != NULL){insert_brother($$, $3);} insert_first_child($$, $1);}
            | error SEMI                                                         {$$ = NULL;}
 ;
 
-DeclarationAux: DeclarationAux COMMA Declarator                                 {$$ = $1; insert_brother($$, $3);}
-              | Declarator                                                      {$$ = $1;}
+DeclarationAux: DeclarationAux COMMA Declarator                                 {if($1 != NULL){$$ = $1; insert_brother($$, $3);}else{$$ = $3;}}
+              |                                                                 {$$ = NULL;}
 ;
 
 TypeSpec: CHAR                                                                  {$$ = create_node("Char", NULL);}
@@ -97,8 +97,8 @@ TypeSpec: CHAR                                                                  
         | DOUBLE                                                                {$$ = create_node("Double", NULL);}
 ;
 
-Declarator: ID ASSIGN ExpressionAux                                             {$$ = create_node("Id", $1); insert_brother($$, $3);}
-          | ID                                                                  {$$ = create_node("Id", $1);}
+Declarator: ID ASSIGN ExpressionAux                                             {$$ = create_node("Declaration", NULL); insert_child($$,create_node("Id", $1)); insert_child($$, $3);}
+          | ID                                                                  {$$ = create_node("Declaration", NULL); insert_child($$, create_node("Id", $1));}
 ;
 
 Statement: ExpressionAux SEMI                                                   {$$ = $1;}
@@ -107,7 +107,7 @@ Statement: ExpressionAux SEMI                                                   
          | LBRACE RBRACE                                                        {$$ = NULL;}
          | IF LPAR ExpressionAux RPAR StatementError %prec IFPREC               {$$ = create_node("If", NULL); insert_child($$, $3); if($5 == NULL){insert_child($$, create_node("Null", NULL));} else if($5 != NULL && $5->brother != NULL){insert_child($$, create_node("StatList", NULL)); insert_child($$->child->brother, $5);} else{insert_child($$, $5);} insert_child($$, create_node("Null", NULL));}
          | IF LPAR ExpressionAux RPAR StatementError ELSE StatementError        {$$ = create_node("If", NULL); insert_child($$, $3); if($5 == NULL){insert_child($$, create_node("Null", NULL));} else if($5 != NULL && $5->brother != NULL){insert_child($$, create_node("StatList", NULL)); insert_child($$->child->brother, $5);} else{insert_child($$, $5);} if($7 == NULL){insert_child($$, create_node("Null", NULL));} else if($7 != NULL && $7->brother != NULL){insert_child($$, create_node("StatList", NULL)); insert_child($$->child->brother->brother, $7);} else{insert_child($$, $7);}}
-         | WHILE LPAR ExpressionAux RPAR StatementError                         {$$ = create_node("While", NULL); insert_child($$, $3); insert_child($$, $5);}
+         | WHILE LPAR ExpressionAux RPAR StatementError                         {$$ = create_node("While", NULL); if($3!=NULL){insert_child($$, $3);}else{insert_child($$, create_node("Null", NULL));} if($5 != NULL){insert_child($$, $5);}else{insert_child($$, create_node("Null",NULL));}}
          | RETURN ExpressionAux SEMI                                            {$$ = create_node("Return", NULL); insert_child($$, $2);}
          | RETURN SEMI                                                          {$$ = create_node("Return", NULL); insert_child($$, create_node("Null", NULL));}
          | LBRACE error RBRACE                                                  {$$ = NULL;}

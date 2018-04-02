@@ -12,6 +12,7 @@ struct Node{
 
 Node* root;
 Node* create_node(char* token, char* value);
+void insert_first_child(Node *node, Node *child_node);
 Node* insert_child(Node *node, Node *child_node);
 Node* insert_brother(Node *node, Node *brother_node);
 void print_tree(Node *root, int dots);

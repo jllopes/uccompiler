@@ -18,11 +18,32 @@ Node* create_node(char* token, char* value){ /* Creates n0d3 */
     return tmp; /* returns n0d3 */
 }
 
+void insert_first_child(Node *node, Node *child_node) { /* child_node = typespec */
+    if(child_node == NULL) /* If node to insert is null end function */
+        return;
+
+    Node *tmp = (Node*) malloc(sizeof(Node));
+    Node *uncle = node->brother;
+    if(node->child == NULL){ /* If node has no child, create one */
+        node->child = (Node*) malloc(sizeof(Node));
+        node->child = child_node;
+    } else {
+        tmp = node->child;
+        node->child = child_node;
+        node->child->brother = tmp;
+    }
+    while(uncle != NULL){ /* Goes through cousins to add type spec */
+        tmp = uncle->child;
+        uncle->child = create_node(child_node->token, NULL);
+        uncle->child->brother = tmp;
+        uncle = uncle->brother;
+    }
+}
+
 Node* insert_child(Node *node, Node *child_node) {
     //printf("child_node->token: %s;\n", child_node->token);
     if(node == NULL) /* If node to insert is null end function */
         return NULL;
-
     if(node->child == NULL){ /* If node has no child, create one */
         node->child = (Node*) malloc(sizeof(Node));
         /*node->child->child = NULL;
@@ -30,10 +51,10 @@ Node* insert_child(Node *node, Node *child_node) {
         node->child->token = NULL;*/
         node->child = child_node;
     } else {
-        Node *tmp, *prev;
+        Node *tmp = (Node*) malloc(sizeof(Node));
+        Node *prev = (Node*) malloc(sizeof(Node));
         prev = node->child;
         tmp = node->child->brother;
-
         while (tmp != NULL){ /* Goes through all the brothers */
             prev = tmp;
             tmp = tmp->brother;
@@ -52,7 +73,8 @@ Node* insert_brother(Node *node, Node *brother_node) {
     //printf("node->token: %s;\n", node->token);
     if(node == NULL) /* If node to insert is null end function */
         return NULL;
-    Node *tmp, *prev;
+    Node *tmp = (Node*) malloc(sizeof(Node));
+        Node *prev = (Node*) malloc(sizeof(Node));
     prev = node;
     tmp = node->brother;
 
