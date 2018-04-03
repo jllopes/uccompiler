@@ -135,6 +135,7 @@ int main(int argc, char **argv){
 	if(flag_error == 0 && flag_tree){
 		print_tree(root, 0);
 	}
+	clear(root);
 	return 0;
 }
 
