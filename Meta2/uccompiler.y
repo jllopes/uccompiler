@@ -156,7 +156,7 @@ ExpressionAux: ExpressionAux COMMA Expression                                   
              | Expression                                                       {$$ = $1;}
 ;
 
-ExpressionSecAux: ExpressionSecAux COMMA Expression                             {$$ = create_node("Comma", NULL); if($1 != NULL){insert_child($$, $1);}else{insert_child($$, create_node("Null", NULL));} if($3 != NULL){insert_child($$, $3);}else{insert_child($$, create_node("Null", NULL));}}
+ExpressionSecAux: ExpressionSecAux COMMA Expression                             {if($1 != NULL){$$ = $1; insert_brother($$, $3);}else if($3 != NULL){$$ = $3;}else{$$ = create_node("Null", NULL);}}
                 |                                                               {$$ = NULL;}
 ;
 
