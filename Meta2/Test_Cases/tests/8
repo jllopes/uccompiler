@@ -1,0 +1,8 @@
+int a(void);
+int a(void) {
+	int a, char, b;
+	int putchar();
+	if (int a = 0) {
+		cenas;
+	}
+}

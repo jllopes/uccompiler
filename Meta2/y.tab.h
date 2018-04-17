@@ -79,7 +79,8 @@
      INVCHRLIT = 295,
      UNTCHRLIT = 296,
      REALLIT = 297,
-     IFPREC = 298
+     UNARY = 298,
+     IFPREC = 299
    };
 #endif
 /* Tokens.  */
@@ -123,19 +124,21 @@
 #define INVCHRLIT 295
 #define UNTCHRLIT 296
 #define REALLIT 297
-#define IFPREC 298
+#define UNARY 298
+#define IFPREC 299
 
 
 
 
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 typedef union YYSTYPE
-#line 8 "uccompiler.y"
+#line 14 "uccompiler.y"
 {
     char* token;
+    struct Node *node;
 }
 /* Line 1529 of yacc.c.  */
-#line 139 "y.tab.h"
+#line 142 "y.tab.h"
 	YYSTYPE;
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1
