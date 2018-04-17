@@ -10,7 +10,7 @@ Rúben Telmo Domingues Leal
 #include "y.tab.h"
 int line = 1, column = 1;
 int comment_line, comment_column;
-int flag_lexical = 0, flag_syntax = 0, flag_error = 0, flag_tree = 0;
+int flag_lexical = 0, flag_syntax = 0, flag_error = 0, flag_tree = 0, flag_semantics = 0;
 %}
 %X MULTICOMMENT
 CHAR "char"
@@ -122,9 +122,14 @@ int main(int argc, char **argv){
 			flag_lexical = 1;
 			yylex();
 		}
-		else if(strcmp(argv[1], "-t") == 0){
+		else if(strcmp(argv[1], "-t") == 0 || strcmp(argv[1], "-2") == 0){
 			flag_tree = 1;
 			flag_syntax = 1;
+			yyparse();
+		}
+		else if(strcmp(argv[1], "-s") == 0){
+			flag_syntax = 1;
+			flag_semantics = 1;
 			yyparse();
 		}
 	}
@@ -134,6 +139,9 @@ int main(int argc, char **argv){
 	}
 	if(flag_error == 0 && flag_tree){
 		print_tree(root, 0);
+	}
+	if(flag_error == 0 && flag_semantics){
+		//print_table();
 	}
 	clear(root);
 	return 0;
