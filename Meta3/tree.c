@@ -18,6 +18,14 @@ Node* create_node(char* token, char* value){ /* Creates n0d3 */
     return tmp; /* returns n0d3 */
 }
 
+Token* create_token(int line, int column, char *id){ /* Create token to return from lex */
+    Token* token = (Token*)malloc(sizeof(Token));
+    token->line = line;
+    token->column = column;
+    token->id = strdup(id);
+    return token;
+}
+
 void insert_first_child(Node *node, Node *child_node) { /* child_node = typespec */
     if(child_node == NULL) /* If node to insert is null end function */
         return;

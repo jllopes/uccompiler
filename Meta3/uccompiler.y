@@ -6,13 +6,14 @@ Rúben Telmo Domingues Leal
     #include <stdio.h>
     #include <stdlib.h>
     #include "tree.h"
+    #include "sym_table.h"
     int yylex(void);
     void yyerror (char *s);
 %}
 
 
 %union{
-    char* token;
+    struct Token *token;
     struct Node *node;
 }
 
@@ -37,13 +38,17 @@ Rúben Telmo Domingues Leal
 %nonassoc IFPREC
 %nonassoc ELSE
 %%
-Program: Start                                                                  {root = create_node("Program", NULL);
-                                                                                insert_child(root,$1);}
+Program: Start                                                                  {
+                                                                                  root = create_node("Program", NULL);
+                                                                                  insert_child(root,$1);
+                                                                                  sym_table = create_table("Global Symbol Table");
+                                                                                }
 ;                                                                                                          
 
 Start: FunctionDefinition StartAux                                              {
                                                                                   $$ = $1; 
                                                                                   insert_brother($$, $2);
+                                                                                  insert_symbol(sym_table, $1);
                                                                                 }       
      | FunctionDeclaration StartAux                                             {
                                                                                   $$ = $1; 
@@ -131,7 +136,7 @@ FunctionDeclaration: TypeSpec FunctionDeclarator SEMI                           
 ;
 
 FunctionDeclarator: ID LPAR ParameterList RPAR                                  {
-                                                                                  $$ = create_node("Id",$1); 
+                                                                                  $$ = create_node("Id",$1->id); 
                                                                                   insert_brother($$, $3);
                                                                                 }
 ;
@@ -153,7 +158,7 @@ ParameterListAux: COMMA ParameterDeclaration ParameterListAux                   
 ParameterDeclaration: TypeSpec ID                                               {
                                                                                   $$ = create_node("ParamDeclaration", NULL); 
                                                                                   insert_child($$, $1); 
-                                                                                  insert_child($$, create_node("Id",$2));
+                                                                                  insert_child($$, create_node("Id",$2->id));
                                                                                 }
                     | TypeSpec                                                  {
                                                                                   $$ = create_node("ParamDeclaration", NULL); 
@@ -190,11 +195,11 @@ TypeSpec: CHAR                                                                  
 ;
 
 Declarator: ID ASSIGN ExpressionAux                                             {
-                                                                                  $$ = create_node("Declaration", NULL); insert_child($$,create_node("Id", $1)); 
+                                                                                  $$ = create_node("Declaration", NULL); insert_child($$,create_node("Id", $1->id)); 
                                                                                   insert_child($$, $3);}
           | ID                                                                  {
                                                                                   $$ = create_node("Declaration", NULL); 
-                                                                                  insert_child($$, create_node("Id", $1));
+                                                                                  insert_child($$, create_node("Id", $1->id));
                                                                                 }
 ;
 
@@ -498,7 +503,7 @@ Expression: Expression ASSIGN Expression                                        
                                                                                 }
           | ID LPAR Expression ExpressionSecAux RPAR                            {
                                                                                   $$ = create_node("Call", NULL); 
-                                                                                  insert_child($$, create_node("Id", $1)); 
+                                                                                  insert_child($$, create_node("Id", $1->id)); 
                                                                                   if($3!=NULL) {
                                                                                     insert_child($$, $3);
                                                                                   } 
@@ -508,12 +513,12 @@ Expression: Expression ASSIGN Expression                                        
                                                                                 }
           | ID LPAR RPAR                                                        {
                                                                                   $$ = create_node("Call", NULL); 
-                                                                                  insert_child($$, create_node("Id", $1));
+                                                                                  insert_child($$, create_node("Id", $1->id));
                                                                                 }
-          | ID                                                                  {$$ = create_node("Id", $1);}
-          | INTLIT                                                              {$$ = create_node("IntLit", $1);}
-          | CHRLIT                                                              {$$ = create_node("ChrLit", $1);}
-          | REALLIT                                                             {$$ = create_node("RealLit", $1);}
+          | ID                                                                  {$$ = create_node("Id", $1->id);}
+          | INTLIT                                                              {$$ = create_node("IntLit", $1->id);}
+          | CHRLIT                                                              {$$ = create_node("ChrLit", $1->id);}
+          | REALLIT                                                             {$$ = create_node("RealLit", $1->id);}
           | LPAR ExpressionAux RPAR                                             {$$ = $2;}
           | LPAR error RPAR                                                     {$$ = NULL;}
           | ID LPAR error RPAR                                                  {$$ = NULL;}

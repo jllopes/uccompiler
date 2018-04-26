@@ -70,48 +70,47 @@ REALLIT (([0-9]+)"."([0-9]+)?([eE][+-]?[0-9]+)?)|"."[0-9]+([eE][+-]?[0-9]+)?|[0-
 \n|\r|\r\n							{line++; column=1;}
 \t|" "								{column++;}
 <<EOF>>								{column++; return 0;}
-"//"[^\n\r]*						{column+=yyleng;}
-{RESERVED}							{if(flag_lexical != 0){printf("RESERVED(%s)\n",yytext);} column+=yyleng; if(flag_syntax != 0){yylval.token = (char*)strdup(yytext); return RESERVED;};}
-{CHAR}								{if(flag_lexical != 0){printf("CHAR\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = (char*)strdup(yytext); return CHAR;};}
-{ELSE}								{if(flag_lexical != 0){printf("ELSE\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = (char*)strdup(yytext); return ELSE;};}
-{WHILE}								{if(flag_lexical != 0){printf("WHILE\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = (char*)strdup(yytext); return WHILE;};}
-{IF}								{if(flag_lexical != 0){printf("IF\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = (char*)strdup(yytext); return IF;};}
-{INT}								{if(flag_lexical != 0){printf("INT\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = (char*)strdup(yytext); return INT;};}
-{SHORT}								{if(flag_lexical != 0){printf("SHORT\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = (char*)strdup(yytext); return SHORT;};}
-{DOUBLE}							{if(flag_lexical != 0){printf("DOUBLE\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = (char*)strdup(yytext); return DOUBLE;};}
-{RETURN}							{if(flag_lexical != 0){printf("RETURN\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = (char*)strdup(yytext); return RETURN;};}
-{VOID} 								{if(flag_lexical != 0){printf("VOID\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = (char*)strdup(yytext); return VOID;};}
-{BITWISEAND} 						{if(flag_lexical != 0){printf("BITWISEAND\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = (char*)strdup(yytext); return BITWISEAND;};}
-{BITWISEOR} 						{if(flag_lexical != 0){printf("BITWISEOR\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = (char*)strdup(yytext); return BITWISEOR;};}
-{BITWISEXOR} 						{if(flag_lexical != 0){printf("BITWISEXOR\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = (char*)strdup(yytext); return BITWISEXOR;};}
-{AND} 								{if(flag_lexical != 0){printf("AND\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = (char*)strdup(yytext); return AND;};}
-{OR} 								{if(flag_lexical != 0){printf("OR\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = (char*)strdup(yytext); return OR;};}
-{ASSIGN} 							{if(flag_lexical != 0){printf("ASSIGN\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = (char*)strdup(yytext); return ASSIGN;};}
-{NOT} 								{if(flag_lexical != 0){printf("NOT\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = (char*)strdup(yytext); return NOT;};}
-{MUL} 								{if(flag_lexical != 0){printf("MUL\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = (char*)strdup(yytext); return MUL;};}
-{COMMA} 							{if(flag_lexical != 0){printf("COMMA\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = (char*)strdup(yytext); return COMMA;};}
-{DIV} 								{if(flag_lexical != 0){printf("DIV\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = (char*)strdup(yytext); return DIV;};}
-{EQ} 								{if(flag_lexical != 0){printf("EQ\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = (char*)strdup(yytext); return EQ;};}
-{NE} 								{if(flag_lexical != 0){printf("NE\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = (char*)strdup(yytext); return NE;};}
-{GE} 								{if(flag_lexical != 0){printf("GE\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = (char*)strdup(yytext); return GE;};}
-{GT} 								{if(flag_lexical != 0){printf("GT\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = (char*)strdup(yytext); return GT;};}
-{LE} 								{if(flag_lexical != 0){printf("LE\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = (char*)strdup(yytext); return LE;};}
-{LT} 								{if(flag_lexical != 0){printf("LT\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = (char*)strdup(yytext); return LT;};}
-{LBRACE} 							{if(flag_lexical != 0){printf("LBRACE\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = (char*)strdup(yytext); return LBRACE;};}
-{LPAR} 								{if(flag_lexical != 0){printf("LPAR\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = (char*)strdup(yytext); return LPAR;};}
-{RBRACE} 							{if(flag_lexical != 0){printf("RBRACE\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = (char*)strdup(yytext); return RBRACE;};}
-{RPAR} 								{if(flag_lexical != 0){printf("RPAR\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = (char*)strdup(yytext); return RPAR;};}
-{MINUS} 							{if(flag_lexical != 0){printf("MINUS\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = (char*)strdup(yytext); return MINUS;};}
-{PLUS} 								{if(flag_lexical != 0){printf("PLUS\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = (char*)strdup(yytext); return PLUS;};}
-{MOD} 								{if(flag_lexical != 0){printf("MOD\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = (char*)strdup(yytext); return MOD;};}
-{SEMI} 								{if(flag_lexical != 0){printf("SEMI\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = (char*)strdup(yytext); return SEMI;};}
-{CHRLIT} 							{if(flag_lexical != 0){printf("CHRLIT(%s)\n",yytext);} column+=yyleng; if(flag_syntax != 0){yylval.token = (char*)strdup(yytext); return CHRLIT;};}
+{RESERVED}							{if(flag_lexical != 0){printf("RESERVED(%s)\n",yytext);} column+=yyleng; if(flag_syntax != 0){yylval.token = create_token(line, column, yytext); return RESERVED;};}
+{CHAR}								{if(flag_lexical != 0){printf("CHAR\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = create_token(line, column, yytext); return CHAR;};}
+{ELSE}								{if(flag_lexical != 0){printf("ELSE\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = create_token(line, column, yytext); return ELSE;};}
+{WHILE}								{if(flag_lexical != 0){printf("WHILE\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = create_token(line, column, yytext); return WHILE;};}
+{IF}								{if(flag_lexical != 0){printf("IF\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = create_token(line, column, yytext); return IF;};}
+{INT}								{if(flag_lexical != 0){printf("INT\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = create_token(line, column, yytext); return INT;};}
+{SHORT}								{if(flag_lexical != 0){printf("SHORT\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = create_token(line, column, yytext); return SHORT;};}
+{DOUBLE}							{if(flag_lexical != 0){printf("DOUBLE\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = create_token(line, column, yytext); return DOUBLE;};}
+{RETURN}							{if(flag_lexical != 0){printf("RETURN\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = create_token(line, column, yytext); return RETURN;};}
+{VOID} 								{if(flag_lexical != 0){printf("VOID\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = create_token(line, column, yytext); return VOID;};}
+{BITWISEAND} 						{if(flag_lexical != 0){printf("BITWISEAND\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = create_token(line, column, yytext); return BITWISEAND;};}
+{BITWISEOR} 						{if(flag_lexical != 0){printf("BITWISEOR\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = create_token(line, column, yytext); return BITWISEOR;};}
+{BITWISEXOR} 						{if(flag_lexical != 0){printf("BITWISEXOR\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = create_token(line, column, yytext); return BITWISEXOR;};}
+{AND} 								{if(flag_lexical != 0){printf("AND\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = create_token(line, column, yytext); return AND;};}
+{OR} 								{if(flag_lexical != 0){printf("OR\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = create_token(line, column, yytext); return OR;};}
+{ASSIGN} 							{if(flag_lexical != 0){printf("ASSIGN\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = create_token(line, column, yytext); return ASSIGN;};}
+{NOT} 								{if(flag_lexical != 0){printf("NOT\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = create_token(line, column, yytext); return NOT;};}
+{MUL} 								{if(flag_lexical != 0){printf("MUL\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = create_token(line, column, yytext); return MUL;};}
+{COMMA} 							{if(flag_lexical != 0){printf("COMMA\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = create_token(line, column, yytext); return COMMA;};}
+{DIV} 								{if(flag_lexical != 0){printf("DIV\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = create_token(line, column, yytext); return DIV;};}
+{EQ} 								{if(flag_lexical != 0){printf("EQ\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = create_token(line, column, yytext); return EQ;};}
+{NE} 								{if(flag_lexical != 0){printf("NE\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = create_token(line, column, yytext); return NE;};}
+{GE} 								{if(flag_lexical != 0){printf("GE\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = create_token(line, column, yytext); return GE;};}
+{GT} 								{if(flag_lexical != 0){printf("GT\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = create_token(line, column, yytext); return GT;};}
+{LE} 								{if(flag_lexical != 0){printf("LE\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = create_token(line, column, yytext); return LE;};}
+{LT} 								{if(flag_lexical != 0){printf("LT\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = create_token(line, column, yytext); return LT;};}
+{LBRACE} 							{if(flag_lexical != 0){printf("LBRACE\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = create_token(line, column, yytext); return LBRACE;};}
+{LPAR} 								{if(flag_lexical != 0){printf("LPAR\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = create_token(line, column, yytext); return LPAR;};}
+{RBRACE} 							{if(flag_lexical != 0){printf("RBRACE\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = create_token(line, column, yytext); return RBRACE;};}
+{RPAR} 								{if(flag_lexical != 0){printf("RPAR\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = create_token(line, column, yytext); return RPAR;};}
+{MINUS} 							{if(flag_lexical != 0){printf("MINUS\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = create_token(line, column, yytext); return MINUS;};}
+{PLUS} 								{if(flag_lexical != 0){printf("PLUS\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = create_token(line, column, yytext); return PLUS;};}
+{MOD} 								{if(flag_lexical != 0){printf("MOD\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = create_token(line, column, yytext); return MOD;};}
+{SEMI} 								{if(flag_lexical != 0){printf("SEMI\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = create_token(line, column, yytext); return SEMI;};}
+{CHRLIT} 							{if(flag_lexical != 0){printf("CHRLIT(%s)\n",yytext);} column+=yyleng; if(flag_syntax != 0){yylval.token = create_token(line, column, yytext); return CHRLIT;};}
 {UNTCHRLIT}							{printf("Line %d, col %d: unterminated char constant\n",line,column); column+=yyleng;}
 {INVCHRLIT}							{printf("Line %d, col %d: invalid char constant (%s)\n",line,column,yytext); column+=yyleng;}
-{INTLIT} 							{if(flag_lexical != 0){printf("INTLIT(%s)\n",yytext);} column+=yyleng; if(flag_syntax != 0){yylval.token = (char*)strdup(yytext); return INTLIT;};}
-{ID}								{if(flag_lexical != 0){printf("ID(%s)\n",yytext);} column+=yyleng; if(flag_syntax != 0){yylval.token = (char*)strdup(yytext); return ID;};}
+{INTLIT} 							{if(flag_lexical != 0){printf("INTLIT(%s)\n",yytext);} column+=yyleng; if(flag_syntax != 0){yylval.token = create_token(line, column, yytext); return INTLIT;};}
+{ID}								{if(flag_lexical != 0){printf("ID(%s)\n",yytext);} column+=yyleng; if(flag_syntax != 0){yylval.token = create_token(line, column, yytext); return ID;};}
 
-{REALLIT}							{if(flag_lexical != 0){printf("REALLIT(%s)\n",yytext);} column+=yyleng; if(flag_syntax != 0){yylval.token = (char*)strdup(yytext); return REALLIT;};}
+{REALLIT}							{if(flag_lexical != 0){printf("REALLIT(%s)\n",yytext);} column+=yyleng; if(flag_syntax != 0){yylval.token = create_token(line, column, yytext); return REALLIT;};}
 
 .									{printf("Line %d, col %d: illegal character (%c)\n",line,column,yytext[0]); column+=yyleng;}
 %%
