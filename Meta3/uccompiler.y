@@ -41,14 +41,12 @@ Rúben Telmo Domingues Leal
 Program: Start                                                                  {
                                                                                   root = create_node("Program", NULL);
                                                                                   insert_child(root,$1);
-                                                                                  sym_table = create_table("Global Symbol Table");
                                                                                 }
 ;                                                                                                          
 
 Start: FunctionDefinition StartAux                                              {
                                                                                   $$ = $1; 
                                                                                   insert_brother($$, $2);
-                                                                                  insert_symbol(sym_table, $1);
                                                                                 }       
      | FunctionDeclaration StartAux                                             {
                                                                                   $$ = $1; 

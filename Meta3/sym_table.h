@@ -1,3 +1,5 @@
+#include "tree.h"
+
 #ifndef SYMBOL_TABLE_H
 #define SYMBOL_TABLE_H
 
@@ -9,7 +11,6 @@ struct Symbol{
     char *name;
     char *type;
     Param *param;
-    int param_num;
     Symbol *next;
 };
 
@@ -28,5 +29,13 @@ struct Symbol_Table{
 
 Symbol_Table* sym_table;
 Symbol_Table* create_table(char *title);
-Symbol_Table* insert_symbol(Symbol_Table *table, Symbol *symbol);
+Symbol* create_symbol(char *name, char *type);
+void insert_symbol(Symbol_Table *table, Symbol *symbol);
+Symbol_Table* create_default_table();
+Param* insert_param(Symbol *sym, char *name, char *type);
+void print_params(Symbol *symbol);
+void print_table(Symbol_Table *table);
+void parse_table(Node *node, Symbol_Table *table);
+void parse_func_declaration(Node *node, Symbol_Table *global);
+void print_all_tables(Symbol_Table *table);
 #endif //SYMBOL_TABLE_H

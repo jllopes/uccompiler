@@ -6,11 +6,11 @@ Rúben Telmo Domingues Leal
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "tree.h"
+#include "sym_table.h"
 #include "y.tab.h"
 int line = 1, column = 1;
 int comment_line, comment_column;
-int flag_lexical = 0, flag_syntax = 0, flag_error = 0, flag_tree = 0, flag_semantics = 0;
+int flag_lexical = 0, flag_syntax = 0, flag_error = 0, flag_tree = 0;
 %}
 %X MULTICOMMENT
 CHAR "char"
@@ -128,8 +128,14 @@ int main(int argc, char **argv){
 		}
 		else if(strcmp(argv[1], "-s") == 0){
 			flag_syntax = 1;
-			flag_semantics = 1;
 			yyparse();
+			if(!flag_error){
+				Symbol_Table *global = create_default_table();
+				parse_table(root, global);
+				print_all_tables(global);
+				//parse_table
+				//print_table
+			}
 		}
 	}
 	else{
@@ -138,9 +144,6 @@ int main(int argc, char **argv){
 	}
 	if(flag_error == 0 && flag_tree){
 		print_tree(root, 0);
-	}
-	if(flag_error == 0 && flag_semantics){
-		//print_table();
 	}
 	clear(root);
 	return 0;
