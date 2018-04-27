@@ -37,5 +37,9 @@ void print_params(Symbol *symbol);
 void print_table(Symbol_Table *table);
 void parse_table(Node *node, Symbol_Table *table);
 void parse_func_declaration(Node *node, Symbol_Table *global);
+void parse_func_definition(Node *node, Symbol_Table *global);
+void parse_declaration(Node *node, Symbol_Table *global);
+void add_return(Symbol_Table *table, char *type);
 void print_all_tables(Symbol_Table *table);
+char *lower_case(char *str);
 #endif //SYMBOL_TABLE_H
