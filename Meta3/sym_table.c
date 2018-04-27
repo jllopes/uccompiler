@@ -184,7 +184,7 @@ void parse_func_definition(Node *node, Symbol_Table *global){
 	char *type = node_aux->token;
 	char *name = node_aux->brother->value;
 	Symbol *symbol_aux;
-	Symbol *symbol_sec_aux;
+	//Symbol *symbol_sec_aux;
 	symbol_aux = global->symbol;
 	while(symbol_aux != NULL) { // Goes through global symbol table to see if function was already declared
 		if(strcmp(name, symbol_aux->name) == 0){ // Was already declared
@@ -222,12 +222,13 @@ void parse_func_definition(Node *node, Symbol_Table *global){
 	node_sec_aux = node_aux->child; // Skips FuncBody
 	while(node_sec_aux != NULL){ // Goes through FuncBody children
 		if(strcmp(node_sec_aux->token, "Declaration") == 0){ // Found Declaration
-			symbol_sec_aux = (Symbol*) malloc(sizeof(Symbol));
+			parse_declaration(node_sec_aux, table_aux);
+			/*symbol_sec_aux = (Symbol*) malloc(sizeof(Symbol));
 			symbol_sec_aux->type = lower_case(node_sec_aux->child->token);
 			symbol_sec_aux->name = lower_case(node_sec_aux->child->brother->value);
 			symbol_sec_aux->param = NULL;
 			symbol_sec_aux->next = NULL;
-			insert_symbol(table_aux, symbol_sec_aux);
+			insert_symbol(table_aux, symbol_sec_aux);*/
 		}
 		node_sec_aux = node_sec_aux->brother;
 	}
@@ -241,14 +242,21 @@ void add_return(Symbol_Table *table, char *type){
 	symbol_aux->type = lower_case(type);
 	insert_symbol(table, symbol_aux); // Add return to function
 }
-void parse_declaration(Node *node, Symbol_Table *global){
+void parse_declaration(Node *node, Symbol_Table *table){
 	Symbol *symbol_aux = (Symbol*) malloc(sizeof(Symbol));
-	Node *node_aux = node; // Skip Declaration
+	Symbol *symbol_sec_aux = table->symbol;
+	Node *node_aux = node;
+	while(symbol_sec_aux != NULL) { // Goes through symbol table to see if variable was already declared
+		if(strcmp(node_aux->child->brother->value, symbol_sec_aux->name) == 0){ // Was already declared
+			return;
+		}
+		symbol_sec_aux = symbol_sec_aux->next;
+	}
 	symbol_aux->type = lower_case(node_aux->child->token);
 	symbol_aux->name = lower_case(node_aux->child->brother->value);
 	symbol_aux->param = NULL;
 	symbol_aux->next = NULL;
-	insert_symbol(global, symbol_aux);
+	insert_symbol(table, symbol_aux);
 }
 
 char *lower_case(char *str){
