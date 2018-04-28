@@ -43,6 +43,7 @@ Symbol* create_symbol(char *name, char *type){
 	sym->name = lower_case(name);
 	sym->type = lower_case(type);
 	sym->param = NULL;
+	sym->is_param = 0;
 	sym->next = NULL;
 	return sym;
 }
@@ -75,7 +76,7 @@ void print_params(Symbol *symbol){
 			printf(", %s", aux->type);
 			aux = aux->next;
 		}
-		printf(")\n");
+		printf(")");
 	}
 }
 
@@ -83,18 +84,24 @@ void print_table(Symbol_Table *table){
 	printf("===== %s =====\n", table->title);
 	if(table->symbol != NULL){
 		Symbol *aux = table->symbol;
-		printf("%s\t%s",aux->name, aux->type);
-		if(aux->param != NULL){
-			print_params(aux);
-		} else{
+		if(aux->is_param == 1){
+			printf("%s\t%s\tparam\n",aux->name, aux->type);
+		} else {
+			printf("%s\t%s",aux->name, aux->type);
+			if(aux->param != NULL){
+				print_params(aux);
+			}
 			printf("\n");
 		}
 		while(aux->next != NULL){
 			aux = aux->next;
-			printf("%s\t%s",aux->name, aux->type);
-			if(aux->param != NULL){
-				print_params(aux);
-			} else{
+			if(aux->is_param == 1){
+				printf("%s\t%s\tparam\n",aux->name, aux->type);
+			} else {
+				printf("%s\t%s",aux->name, aux->type);
+				if(aux->param != NULL){
+					print_params(aux);
+				}
 				printf("\n");
 			}
 		}
@@ -104,12 +111,10 @@ void print_table(Symbol_Table *table){
 void print_all_tables(Symbol_Table *table){
 	Symbol_Table *aux_table = table;
 	while(aux_table != NULL){
-		//printf("%s..%d\n", aux_table->name, aux_table->definition);
+		//printf("%s..%d\n", aux_table->title, aux_table->definition);
 		if(aux_table->definition != 0){
 			print_table(aux_table);
-			if(aux_table->next != NULL){
-				printf("\n");
-			}
+			printf("\n");
 		}
 		aux_table = aux_table->next;
 	}
@@ -178,7 +183,12 @@ void parse_func_declaration(Node *node, Symbol_Table *global){
 	symbol_aux = create_symbol(name, type);
 	while(node_aux != NULL){ // Check if there are more ParamDeclaration
 		if(node_aux->child->brother != NULL){ // Checks if param has id
+			Symbol *symbol_sec_aux = (Symbol*) malloc(sizeof(Symbol));
 			insert_param(symbol_aux, node_aux->child->brother->value, node_aux->child->token);
+			symbol_sec_aux->name = lower_case(node_aux->child->brother->value);
+			symbol_sec_aux->type = lower_case(node_aux->child->token);
+			symbol_sec_aux->is_param = 1;
+			insert_symbol(table_aux, symbol_sec_aux);
 		} else {
 			insert_param(symbol_aux, NULL, node_aux->child->token);
 		}
@@ -194,7 +204,7 @@ void parse_func_definition(Node *node, Symbol_Table *global){
 	char *type = node_aux->token;
 	char *name = node_aux->brother->value;
 	Symbol *symbol_aux;
-	//Symbol *symbol_sec_aux;
+	Symbol *symbol_sec_aux = (Symbol*) malloc(sizeof(Symbol));
 	//symbol_aux = global->symbol;
 	int declared = 0;
 	while(global_aux != NULL) { // Goes through global symbol table to see if function was already declared
@@ -228,12 +238,16 @@ void parse_func_definition(Node *node, Symbol_Table *global){
 		while(node_sec_aux != NULL){ // Check if there are more ParamDeclaration
 			if(node_sec_aux->child->brother != NULL){ // Checks if param has id
 				insert_param(symbol_aux, node_sec_aux->child->brother->value, node_sec_aux->child->token);
-				//insert_func_param(table_aux, node_sec_aux->child->brother->value)
+				symbol_sec_aux->name = lower_case(node_sec_aux->child->brother->value);
+				symbol_sec_aux->type = lower_case(node_sec_aux->child->token);
+				symbol_sec_aux->is_param = 1;
+				insert_symbol(table_aux, symbol_sec_aux);
 			} else {
 				insert_param(symbol_aux, NULL, node_sec_aux->child->token);
 			}
 			node_sec_aux = node_sec_aux->brother;
 		}
+		insert_symbol(global, symbol_aux); // Add function to global symbol table
 	}
 	table_aux->definition = 1;
 	while(strcmp(node_aux->token, "FuncBody") != 0){
@@ -246,7 +260,7 @@ void parse_func_definition(Node *node, Symbol_Table *global){
 		}
 		node_sec_aux = node_sec_aux->brother;
 	}
-	insert_symbol(global, symbol_aux); // Add function to global symbol table	
+	
 }
 
 void add_return(Symbol_Table *table, char *type){
@@ -269,6 +283,7 @@ void parse_declaration(Node *node, Symbol_Table *table){
 	symbol_aux->type = lower_case(node_aux->child->token); // Type
 	symbol_aux->name = lower_case(node_aux->child->brother->value); // Name [Id(x) -> x = name = value]
 	symbol_aux->param = NULL;
+	symbol_aux->is_param = 0;
 	symbol_aux->next = NULL;
 	insert_symbol(table, symbol_aux);
 }

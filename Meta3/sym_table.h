@@ -10,6 +10,7 @@ typedef struct Symbol_Table Symbol_Table;
 struct Symbol{
     char *name;
     char *type;
+	int is_param;
     Param *param;
     Symbol *next;
 };
