@@ -8,6 +8,9 @@ Node* create_node(char* token, char* value){ /* Creates n0d3 */
     tmp->child = NULL; 
     tmp->brother = NULL; 
     tmp->token = (char*) malloc(sizeof(token)* sizeof(char));
+    tmp->param = NULL;
+    tmp->type = NULL;
+    tmp->function = 0;
     strcpy(tmp->token, token);
     if(value != NULL){
         tmp->value = (char*) malloc(sizeof(value)* sizeof(char));
@@ -97,7 +100,6 @@ void print_tree(Node *node, int dots){
     for (int i = 0; i < dots; ++i) {
         printf("..");
     }
-    //Colocar de acordo com o enunciado
     if(node->value != NULL){
         printf("%s(%s)\n", node->token, node->value);
     } else{
@@ -110,6 +112,56 @@ void print_tree(Node *node, int dots){
         print_tree(node->brother, dots);
 }
 
+void print_annotated_tree(Node *node, int dots){
+    //printf("Token: %s, Value: %s, Type: %s\n", node->token, node->value, node->type);
+    if(node == NULL)
+        return;
+    for (int i = 0; i < dots; ++i) {
+        printf("..");
+    }
+    if(node->value != NULL){
+        printf("%s(%s)", node->token, node->value);
+        if(node->type != NULL){
+            printf(" - %s", node->type);
+            if(node->function != 0){
+                Param *aux = node->param;
+                if(aux != NULL){
+                    printf("(%s", aux->type);
+                    aux = aux->next;
+                    while(aux != NULL){
+                        printf(",%s", aux->type);
+                        aux = aux->next;
+                    }
+                    printf(")");
+                }
+            }
+        }
+        printf("\n");
+    } else{
+        printf("%s", node->token);
+        if(node->type != NULL){
+            printf(" - %s", node->type);
+            if(node->function != 0){
+                Param *aux = node->param;
+                if(aux != NULL){
+                    printf("(%s", aux->type);
+                    aux = aux->next;
+                    while(aux != NULL){
+                        printf(",%s", aux->type);
+                        aux = aux->next;
+                    }
+                    printf(")");
+                }
+            }
+        }
+        printf("\n");
+    }
+
+    if(node->child != NULL)
+        print_annotated_tree(node->child, dots+1);
+    if(node->brother != NULL)
+        print_annotated_tree(node->brother, dots);
+}
 void clear(Node *node){ /* Free node memory */
     if(node != NULL) {
         clear(node->child);

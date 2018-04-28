@@ -128,12 +128,12 @@ int main(int argc, char **argv){
 		}
 		else if(strcmp(argv[1], "-s") == 0){
 			flag_syntax = 1;
-			flag_tree = 1;
 			yyparse();
 			if(!flag_error){
 				Symbol_Table *global = create_default_table();
 				parse_table(root, global);
 				print_all_tables(global);
+				print_annotated_tree(root, 0);
 			}
 		}
 	}

@@ -164,6 +164,7 @@ void parse_func_declaration(Node *node, Symbol_Table *global){
 		}
 		symbol_aux = symbol_aux->next;
 	}
+	insert_symbol(global, symbol_aux); // Add function to global symbol table
 	char *name_aux = malloc((strlen("Function") + strlen(name) + strlen("Symbol Table")) * sizeof(char));
 	sprintf(name_aux, "%s %s %s","Function", name, "Symbol Table");
 	table_aux = create_table(name_aux, name); // Create symbol table for current function
@@ -193,8 +194,7 @@ void parse_func_declaration(Node *node, Symbol_Table *global){
 			insert_param(symbol_aux, NULL, node_aux->child->token);
 		}
 		node_aux = node_aux->brother;
-	}
-	insert_symbol(global, symbol_aux); // Add function to global symbol table	
+	}	
 }
 
 void parse_func_definition(Node *node, Symbol_Table *global){
@@ -235,6 +235,7 @@ void parse_func_definition(Node *node, Symbol_Table *global){
 		}
 		node_sec_aux = node_aux->child; // Skip ParamList
 		symbol_aux = create_symbol(name, type);
+		insert_symbol(global, symbol_aux); // Add function to global symbol table
 		while(node_sec_aux != NULL){ // Check if there are more ParamDeclaration
 			if(node_sec_aux->child->brother != NULL){ // Checks if param has id
 				insert_param(symbol_aux, node_sec_aux->child->brother->value, node_sec_aux->child->token);
@@ -247,7 +248,6 @@ void parse_func_definition(Node *node, Symbol_Table *global){
 			}
 			node_sec_aux = node_sec_aux->brother;
 		}
-		insert_symbol(global, symbol_aux); // Add function to global symbol table
 	}
 	table_aux->definition = 1;
 	while(strcmp(node_aux->token, "FuncBody") != 0){
@@ -260,6 +260,7 @@ void parse_func_definition(Node *node, Symbol_Table *global){
 		}
 		node_sec_aux = node_sec_aux->brother;
 	}
+	annotated_tree(node_aux->child, table_aux, global);
 	
 }
 
@@ -296,9 +297,130 @@ char *lower_case(char *str){
 	return aux;
 }
 
-/*int main(){
-	Symbol_Table *table = create_default_table();
-	print_all_tables(table);
-	return 0;
-}*/
+void annotated_tree(Node *root, Symbol_Table *local, Symbol_Table *global) {
+    Node *node = root;
+    while(node != NULL) {
+        if(add_type(node, local, global) == -1 && node->child != NULL) {
+            annotated_tree(node->child, local, global);
+        }
+        node = node->brother;
+    }
+}
 
+int add_type(Node *node, Symbol_Table *local, Symbol_Table *global) {
+	//printf("Token: %s, Value: %s\n", node->token, node->value);
+    if(strcmp(node->token, "Plus") == 0 || strcmp(node->token, "Minus") == 0 || strcmp(node->token, "Not") == 0) { // Unary
+		add_unary_type(node, local, global);
+		return 1;
+    } else if(strcmp(node->token, "Id") == 0){ // Id
+		char *aux = add_id_type(node, local, global);
+		node->type = strdup(aux);
+		return 1;
+    } else if(strcmp(node->token, "Call") == 0){ // Call
+		add_call_type(node, local, global);
+		return 1;
+    } else if(strcmp(node->token, "Eq") == 0 || strcmp(node->token, "Ne") == 0 || strcmp(node->token, "Le") == 0 || strcmp(node->token, "Ge") == 0 || strcmp(node->token, "Lt") == 0 || strcmp(node->token, "Gt") == 0 || strcmp(node->token, "And") == 0 || strcmp(node->token, "Or") == 0) { // Comparisons
+		add_comparison_type(node, local, global);
+		return 1;
+    } else if(strcmp(node->token, "IntLit") == 0 || strcmp(node->token, "ChrLit") == 0 || strcmp(node->token, "RealLit") == 0) { // Literals
+		add_literal_type(node, local, global);
+		return 1;
+    } else if(strcmp(node->token, "Store") == 0 || strcmp(node->token, "Comma") == 0 || strcmp(node->token, "Mul") == 0 || strcmp(node->token, "Div") == 0 || strcmp(node->token, "Mod") == 0  || strcmp(node->token, "Add") == 0 || strcmp(node->token, "Sub") == 0 ){
+		add_type(node->child, local, global);
+        add_type(node->child->brother, local, global);
+        char *aux = type_compare(node->child->type, node->child->brother->type, node->token);
+		if(aux != NULL){
+        	node->type = strdup(aux);
+		}
+		return 1;
+    } else if(strcmp(node->token, "Declaration") == 0) {
+		add_declaration_types(node, local, global);
+		return 1;
+	}
+	return -1;
+}
+
+void add_unary_type(Node *node, Symbol_Table *local, Symbol_Table *global) {
+    node->type = strdup("int");
+    add_type(node->child, local, global);
+}
+
+void add_comparison_type(Node *node, Symbol_Table *local, Symbol_Table *global) { // Comparison always has 2 children
+    node->type = strdup("int");
+    add_type(node->child, local, global);
+    add_type(node->child->brother, local, global);
+}
+
+void add_call_type(Node *node, Symbol_Table *local, Symbol_Table *global){
+    Node *node_aux = node->child->brother; // First param
+    while(node_aux != NULL){ // Find type of all params
+        add_type(node_aux, local, global);
+        node_aux = node_aux->brother;
+    }
+	add_type(node->child, local, global); // Find type of function
+    char *function_type = add_id_type(node->child, local, global);
+    node->type = strdup(function_type);
+}
+
+char* add_id_type(Node *node, Symbol_Table *local, Symbol_Table *global) { // Finds type of x in Id(x)
+    //printf("Node Variable: %s %s\n", node->token, node->value);
+	Symbol *symbol_aux = local->symbol;
+	//printf("Table: %s\n", local->name);
+    while(symbol_aux != NULL){
+		//printf("Variable(local table): %s\n",symbol_aux->name);
+        if(strcmp(symbol_aux->name, node->value)==0) { // Declared in local table
+            if(symbol_aux->param != NULL){
+                node->param = symbol_aux->param;
+                node->function = 1;
+            }
+            return symbol_aux->type;
+        }
+        symbol_aux = symbol_aux->next;
+    } 
+    symbol_aux = global->symbol;
+    while(symbol_aux != NULL){
+        if(strcmp(symbol_aux->name, node->value)==0) { // Declared in local table
+            if(symbol_aux->param != NULL){
+                node->param = symbol_aux->param;;
+                node->function = 1;
+            }
+            return symbol_aux->type;
+        }
+        symbol_aux = symbol_aux->next;
+    } 
+    return NULL; // symbol doesn't exist => semantic error
+}
+
+void add_literal_type(Node *node, Symbol_Table *local, Symbol_Table *global) {
+	//printf("Type: %s, Value: %s\n", node->token, node->value);
+    if(strcmp(node->token, "RealLit") == 0) { // RealLit
+        node->type = strdup("double");
+    } else { // ChrLit, IntLit
+        node->type = strdup("int");
+    }
+}
+
+void add_declaration_types(Node *node, Symbol_Table *local, Symbol_Table *global) { // Only adds type to third child
+	add_type(node->child->brother->brother, local, global);
+}
+
+char* type_compare(char *ftype, char *stype, char *token) {
+    if(strcmp(token, "Add") == 0 || strcmp(token, "Sub") == 0 || strcmp(token, "Mul") == 0 || strcmp(token, "Div") == 0 || strcmp(token, "Mod") == 0){
+        if(strcmp(ftype, "int") == 0 ) {
+            if(strcmp(stype, "int") == 0 || strcmp(stype, "char") == 0) { // int * char, int * int
+                return "int";
+            } else if(strcmp(stype, "double") == 0){ // int * double
+                return "double";
+            }
+        } else if(strcmp(ftype, "double") == 0) {
+            if(strcmp(stype, "double") == 0|| strcmp(stype,"char") == 0|| strcmp(stype,"int") == 0) { // double * double, double * int, double * char
+                return "double";
+            }
+        }
+    } else if(strcmp(token, "Comma") == 0) {
+        return stype;
+    } else if(strcmp(token, "Store") == 0) {
+        return ftype;
+    }
+	return NULL;
+}

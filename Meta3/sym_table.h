@@ -1,10 +1,8 @@
 #include "tree.h"
-
 #ifndef SYMBOL_TABLE_H
 #define SYMBOL_TABLE_H
 
 typedef struct Symbol Symbol;
-typedef struct Param Param;
 typedef struct Symbol_Table Symbol_Table;
 
 struct Symbol{
@@ -13,12 +11,6 @@ struct Symbol{
 	int is_param;
     Param *param;
     Symbol *next;
-};
-
-struct Param{
-	char *name;
-	char *type;
-	Param *next;
 };
 
 struct Symbol_Table{
@@ -44,4 +36,13 @@ void parse_declaration(Node *node, Symbol_Table *global);
 void add_return(Symbol_Table *table, char *type);
 void print_all_tables(Symbol_Table *table);
 char *lower_case(char *str);
+void annotated_tree(Node *root, Symbol_Table *local, Symbol_Table *global);
+int add_type(Node *node, Symbol_Table *local, Symbol_Table *global);
+void add_unary_type(Node *node, Symbol_Table *local, Symbol_Table *global);
+void add_comparison_type(Node *node, Symbol_Table *local, Symbol_Table *global);
+void add_call_type(Node *node, Symbol_Table *local, Symbol_Table *global);
+char* add_id_type(Node *node, Symbol_Table *local, Symbol_Table *global);
+void add_literal_type(Node *node, Symbol_Table *local, Symbol_Table *global);
+void add_declaration_types(Node *node, Symbol_Table *local, Symbol_Table *global);
+char* type_compare(char *ftype, char *stype, char *token);
 #endif //SYMBOL_TABLE_H
