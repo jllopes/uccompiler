@@ -268,7 +268,7 @@ void parse_func_definition(Node *node, Symbol_Table *global){
 		node_sec_aux = node_sec_aux->brother;
 	}*/
 	find_declaration(node_sec_aux, table_aux); // Finds declarations inside of ifs and whiles
-	annotated_tree(node_aux, table_aux, global); // <- SEGFAULT
+	annotated_tree(node_aux, table_aux, global);
 }
 
 void find_declaration(Node *node, Symbol_Table *local){
@@ -295,6 +295,7 @@ void parse_declaration(Node *node, Symbol_Table *table, int recursive){
 	Node *node_aux = node;
 	while(symbol_sec_aux != NULL) { // Goes through symbol table to see if variable was already declared
 		if(strcmp(node_aux->child->brother->value, symbol_sec_aux->name) == 0){ // Was already declared
+			/* Symbol <token> already defined */ // SEMANTIC
 			return;
 		}
 		symbol_sec_aux = symbol_sec_aux->next;
@@ -327,8 +328,9 @@ void annotated_tree(Node *root, Symbol_Table *local, Symbol_Table *global) {
         }
 		if(node->brother != NULL){
         	node = node->brother;
+		} else {
+			return;
 		}
-		return;
     }
 }
 
@@ -341,8 +343,6 @@ int add_type(Node *node, Symbol_Table *local, Symbol_Table *global) {
 		char *aux = add_id_type(node, local, global);
 		if(aux == NULL){
 			return -1;
-		} else if(strcmp(aux, "undef") == 0){
-			return 0;
 		}
 		node->type = strdup(aux);
 		return 1;
@@ -363,7 +363,7 @@ int add_type(Node *node, Symbol_Table *local, Symbol_Table *global) {
 			node->type = strdup(aux);
 			return 1;
 		}
-		return 0;
+		return -1;
     } else if(strcmp(node->token, "Declaration") == 0) {
 		add_declaration_types(node, local, global);
 		return 1;
@@ -372,23 +372,52 @@ int add_type(Node *node, Symbol_Table *local, Symbol_Table *global) {
 }
 
 void add_unary_type(Node *node, Symbol_Table *local, Symbol_Table *global) {
-    node->type = strdup("int");
     add_type(node->child, local, global);
+	node->type = strdup("int");
+	/*Operator <node->token> cannot be applied to type <node->child->type>*/ // SEMANTIC
 }
 
 void add_comparison_type(Node *node, Symbol_Table *local, Symbol_Table *global) { // Comparison always has 2 children
-    node->type = strdup("int");
     add_type(node->child, local, global);
     add_type(node->child->brother, local, global);
+	node->type = strdup("int");
+	/*Operator <node->token> cannot be applied to types <node->child->type>, <node->child->brother->type>*/ // SEMANTIC
 }
 
 void add_call_type(Node *node, Symbol_Table *local, Symbol_Table *global){
+	int gotten_params = 0, expected_params = 0;
     Node *node_aux = node->child->brother; // First param
+	printf("%s\n", node->token);
+	Param *param = (Param*)malloc(sizeof(param));
+	Symbol *symbol_aux = global->symbol;
+	while(symbol_aux != NULL){
+		if(strcmp(symbol_aux->name, node->child->value) == 0){
+			param = symbol_aux->param;
+			break;
+		}
+		symbol_aux = symbol_aux->next;
+	}
+	while(node_aux != NULL){
+		gotten_params++;
+		node_aux = node_aux->brother;
+	}
+	while(param != NULL){
+		expected_params++;
+		param = param->next;
+	}
+	node_aux = node->child->brother;
     while(node_aux != NULL){ // Find type of all params
         add_type(node_aux, local, global);
         node_aux = node_aux->brother;
     }
 	add_type(node->child, local, global); // Find type of function
+	/*if(node->child->function == 0){ // SEMANTIC
+		Symbol <node->child->value> is not a function
+	}
+	if(gotten_params != expected_params){
+		printf("Wrong number of arguments to function %s (got %d, required %d)\n", node->child->value, gotten_params, expected_params);
+	}*/
+
     char *function_type = add_id_type(node->child, local, global);
     node->type = strdup(function_type);
 }
@@ -433,6 +462,9 @@ void add_literal_type(Node *node, Symbol_Table *local, Symbol_Table *global) {
 }
 
 void add_declaration_types(Node *node, Symbol_Table *local, Symbol_Table *global) { // Only adds type to third child
+	/* if(strcmp(node->child->token, "Void") == 0){ // SEMANTIC
+		Invalid use of void type in declaration
+	}*/
 	if(node->child->brother->brother != NULL){
 		add_type(node->child->brother->brother, local, global);
 	}
