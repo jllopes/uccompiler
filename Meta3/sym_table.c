@@ -73,7 +73,7 @@ void print_params(Symbol *symbol){
 			aux = aux->next;
 		}
 		while(aux != NULL){
-			printf(", %s", aux->type);
+			printf(",%s", aux->type);
 			aux = aux->next;
 		}
 		printf(")");
@@ -111,7 +111,6 @@ void print_table(Symbol_Table *table){
 void print_all_tables(Symbol_Table *table){
 	Symbol_Table *aux_table = table;
 	while(aux_table != NULL){
-		//printf("%s..%d\n", aux_table->title, aux_table->definition);
 		if(aux_table->definition != 0){
 			print_table(aux_table);
 			printf("\n");
@@ -144,7 +143,10 @@ void parse_table(Node *node, Symbol_Table *table){
 			} else if(strcmp(aux->token, "FuncDefinition") == 0){
 				parse_func_definition(aux, table);
 			} else if(strcmp(aux->token, "Declaration") == 0){
-				parse_declaration(aux, table);
+				parse_declaration(aux, table, 0);
+			}
+			if(aux->brother == NULL){
+				break;
 			}
 			aux = aux->brother;
 		}
@@ -154,17 +156,19 @@ void parse_table(Node *node, Symbol_Table *table){
 void parse_func_declaration(Node *node, Symbol_Table *global){
 	Symbol_Table *table_aux, *global_aux = global;
 	Node *node_aux = node->child;
-	char *type = node_aux->token;
-	char *name = node_aux->brother->value;
-	Symbol *symbol_aux;
+	char *type = strdup(node_aux->token);
+	char *name = strdup(node_aux->brother->value);
+	Symbol *symbol_aux = (Symbol*)malloc(sizeof(Symbol));
 	symbol_aux = global->symbol;
 	while(symbol_aux != NULL) { // Goes through global symbol table to see if function was already declared
 		if(strcmp(name, symbol_aux->name) == 0){ // Was already declared
 			return;
 		}
+		if(symbol_aux->next == NULL)
+			break;
 		symbol_aux = symbol_aux->next;
 	}
-	insert_symbol(global, symbol_aux); // Add function to global symbol table
+	symbol_aux = create_symbol(name, type);
 	char *name_aux = malloc((strlen("Function") + strlen(name) + strlen("Symbol Table")) * sizeof(char));
 	sprintf(name_aux, "%s %s %s","Function", name, "Symbol Table");
 	table_aux = create_table(name_aux, name); // Create symbol table for current function
@@ -195,23 +199,23 @@ void parse_func_declaration(Node *node, Symbol_Table *global){
 		}
 		node_aux = node_aux->brother;
 	}	
+	insert_symbol(global, symbol_aux); // Add function to global symbol table
 }
 
 void parse_func_definition(Node *node, Symbol_Table *global){
 	Symbol_Table *table_aux, *global_aux = global->next;
-	Node *node_aux = node->child;
+	Node *node_aux = node->child; // First child of FuncDefinition
 	Node *node_sec_aux;
-	char *type = node_aux->token;
-	char *name = node_aux->brother->value;
-	Symbol *symbol_aux;
+	char *type = strdup(node_aux->token); // Return type
+	char *name = strdup(node_aux->brother->value); // Value of Id
+	Symbol *symbol_aux = (Symbol*)malloc(sizeof(Symbol));
 	Symbol *symbol_sec_aux = (Symbol*) malloc(sizeof(Symbol));
-	//symbol_aux = global->symbol;
 	int declared = 0;
 	while(global_aux != NULL) { // Goes through global symbol table to see if function was already declared
 		if(strcmp(name, global_aux->name) == 0){ // Was already declared
 			declared = 1;
 			table_aux = global_aux;
-			if(global_aux->definition == 1){
+			if(global_aux->definition == 1){ // Was already defined
 				return;
 			}
 		}
@@ -239,6 +243,7 @@ void parse_func_definition(Node *node, Symbol_Table *global){
 		while(node_sec_aux != NULL){ // Check if there are more ParamDeclaration
 			if(node_sec_aux->child->brother != NULL){ // Checks if param has id
 				insert_param(symbol_aux, node_sec_aux->child->brother->value, node_sec_aux->child->token);
+				symbol_sec_aux = (Symbol*) malloc(sizeof(Symbol));
 				symbol_sec_aux->name = lower_case(node_sec_aux->child->brother->value);
 				symbol_sec_aux->type = lower_case(node_sec_aux->child->token);
 				symbol_sec_aux->is_param = 1;
@@ -253,17 +258,30 @@ void parse_func_definition(Node *node, Symbol_Table *global){
 	while(strcmp(node_aux->token, "FuncBody") != 0){
 		node_aux = node_aux->brother;
 	}
-	node_sec_aux = node_aux->child; // Skips FuncBody
-	while(node_sec_aux != NULL){ // Goes through FuncBody children
+	if(node_aux->child != NULL){
+		node_sec_aux = node_aux->child; // Skips FuncBody
+	}
+	/*while(node_sec_aux != NULL){ // Goes through FuncBody children
 		if(strcmp(node_sec_aux->token, "Declaration") == 0){ // Found Declaration
-			parse_declaration(node_sec_aux, table_aux);
+			parse_declaration(node_sec_aux, table_aux, 1);
 		}
 		node_sec_aux = node_sec_aux->brother;
-	}
-	annotated_tree(node_aux->child, table_aux, global);
-	
+	}*/
+	find_declaration(node_sec_aux, table_aux); // Finds declarations inside of ifs and whiles
+	annotated_tree(node_aux, table_aux, global); // <- SEGFAULT
 }
 
+void find_declaration(Node *node, Symbol_Table *local){
+	Node *node_aux = node;
+	while(node_aux != NULL){ // Goes through FuncBody children
+		if(strcmp(node_aux->token, "Declaration") == 0){ // Found declaration
+			parse_declaration(node_aux, local, 1);
+		} else if(node_aux->child != NULL){ // Found condition
+			find_declaration(node_aux->child, local); // Recursive call
+		}
+		node_aux = node_aux->brother;
+	}
+}
 void add_return(Symbol_Table *table, char *type){
 	Symbol *symbol_aux = (Symbol*) malloc(sizeof(Symbol));
 	symbol_aux->name = strdup("return");
@@ -271,7 +289,7 @@ void add_return(Symbol_Table *table, char *type){
 	insert_symbol(table, symbol_aux); // Add return to function
 }
 
-void parse_declaration(Node *node, Symbol_Table *table){
+void parse_declaration(Node *node, Symbol_Table *table, int recursive){
 	Symbol *symbol_aux = (Symbol*) malloc(sizeof(Symbol));
 	Symbol *symbol_sec_aux = table->symbol;
 	Node *node_aux = node;
@@ -282,11 +300,14 @@ void parse_declaration(Node *node, Symbol_Table *table){
 		symbol_sec_aux = symbol_sec_aux->next;
 	}
 	symbol_aux->type = lower_case(node_aux->child->token); // Type
-	symbol_aux->name = lower_case(node_aux->child->brother->value); // Name [Id(x) -> x = name = value]
+	symbol_aux->name = strdup(node_aux->child->brother->value); // Name [Id(x) -> x = name = value]
 	symbol_aux->param = NULL;
 	symbol_aux->is_param = 0;
 	symbol_aux->next = NULL;
 	insert_symbol(table, symbol_aux);
+	if(!recursive){
+		annotated_tree(node, table, table);
+	}
 }
 
 char *lower_case(char *str){
@@ -300,10 +321,14 @@ char *lower_case(char *str){
 void annotated_tree(Node *root, Symbol_Table *local, Symbol_Table *global) {
     Node *node = root;
     while(node != NULL) {
-        if(add_type(node, local, global) == -1 && node->child != NULL) {
+		int result = add_type(node, local, global);
+        if(result == -1 && node->child != NULL) {
             annotated_tree(node->child, local, global);
         }
-        node = node->brother;
+		if(node->brother != NULL){
+        	node = node->brother;
+		}
+		return;
     }
 }
 
@@ -314,6 +339,11 @@ int add_type(Node *node, Symbol_Table *local, Symbol_Table *global) {
 		return 1;
     } else if(strcmp(node->token, "Id") == 0){ // Id
 		char *aux = add_id_type(node, local, global);
+		if(aux == NULL){
+			return -1;
+		} else if(strcmp(aux, "undef") == 0){
+			return 0;
+		}
 		node->type = strdup(aux);
 		return 1;
     } else if(strcmp(node->token, "Call") == 0){ // Call
@@ -325,14 +355,15 @@ int add_type(Node *node, Symbol_Table *local, Symbol_Table *global) {
     } else if(strcmp(node->token, "IntLit") == 0 || strcmp(node->token, "ChrLit") == 0 || strcmp(node->token, "RealLit") == 0) { // Literals
 		add_literal_type(node, local, global);
 		return 1;
-    } else if(strcmp(node->token, "Store") == 0 || strcmp(node->token, "Comma") == 0 || strcmp(node->token, "Mul") == 0 || strcmp(node->token, "Div") == 0 || strcmp(node->token, "Mod") == 0  || strcmp(node->token, "Add") == 0 || strcmp(node->token, "Sub") == 0 ){
+    } else if(strcmp(node->token, "Store") == 0 || strcmp(node->token, "Comma") == 0 || strcmp(node->token, "Mul") == 0 || strcmp(node->token, "Div") == 0 || strcmp(node->token, "Mod") == 0  || strcmp(node->token, "Add") == 0 || strcmp(node->token, "Sub") == 0 ){ // Expr
 		add_type(node->child, local, global);
         add_type(node->child->brother, local, global);
-        char *aux = type_compare(node->child->type, node->child->brother->type, node->token);
+		char *aux = type_compare(node->child->type, node->child->brother->type, node->token);
 		if(aux != NULL){
-        	node->type = strdup(aux);
+			node->type = strdup(aux);
+			return 1;
 		}
-		return 1;
+		return 0;
     } else if(strcmp(node->token, "Declaration") == 0) {
 		add_declaration_types(node, local, global);
 		return 1;
@@ -379,6 +410,7 @@ char* add_id_type(Node *node, Symbol_Table *local, Symbol_Table *global) { // Fi
     } 
     symbol_aux = global->symbol;
     while(symbol_aux != NULL){
+		//printf("Variable(global table): %s\n",symbol_aux->name);
         if(strcmp(symbol_aux->name, node->value)==0) { // Declared in local table
             if(symbol_aux->param != NULL){
                 node->param = symbol_aux->param;;
@@ -388,7 +420,7 @@ char* add_id_type(Node *node, Symbol_Table *local, Symbol_Table *global) { // Fi
         }
         symbol_aux = symbol_aux->next;
     } 
-    return NULL; // symbol doesn't exist => semantic error
+    return "undef"; // symbol doesn't exist => semantic error
 }
 
 void add_literal_type(Node *node, Symbol_Table *local, Symbol_Table *global) {
@@ -401,26 +433,37 @@ void add_literal_type(Node *node, Symbol_Table *local, Symbol_Table *global) {
 }
 
 void add_declaration_types(Node *node, Symbol_Table *local, Symbol_Table *global) { // Only adds type to third child
-	add_type(node->child->brother->brother, local, global);
+	if(node->child->brother->brother != NULL){
+		add_type(node->child->brother->brother, local, global);
+	}
 }
 
 char* type_compare(char *ftype, char *stype, char *token) {
-    if(strcmp(token, "Add") == 0 || strcmp(token, "Sub") == 0 || strcmp(token, "Mul") == 0 || strcmp(token, "Div") == 0 || strcmp(token, "Mod") == 0){
-        if(strcmp(ftype, "int") == 0 ) {
-            if(strcmp(stype, "int") == 0 || strcmp(stype, "char") == 0) { // int * char, int * int
-                return "int";
-            } else if(strcmp(stype, "double") == 0){ // int * double
-                return "double";
-            }
-        } else if(strcmp(ftype, "double") == 0) {
-            if(strcmp(stype, "double") == 0|| strcmp(stype,"char") == 0|| strcmp(stype,"int") == 0) { // double * double, double * int, double * char
-                return "double";
-            }
-        }
-    } else if(strcmp(token, "Comma") == 0) {
-        return stype;
-    } else if(strcmp(token, "Store") == 0) {
-        return ftype;
-    }
-	return NULL;
+	if(ftype == NULL && stype != NULL){
+		return stype;
+	} else if(ftype != NULL && stype == NULL){
+		return ftype;
+	} else if(ftype == NULL && stype == NULL){
+		return "int";
+	} else{
+		if(strcmp(token, "Add") == 0 || strcmp(token, "Sub") == 0 || strcmp(token, "Mul") == 0 || strcmp(token, "Div") == 0 || strcmp(token, "Mod") == 0){
+			if(strcmp(ftype, "int") == 0 ) {
+				if(strcmp(stype, "int") == 0 || strcmp(stype, "char") == 0) { // int * char, int * int
+					return "int";
+				} else if(strcmp(stype, "double") == 0){ // int * double
+					return "double";
+				}
+			} else if(strcmp(ftype, "double") == 0) {
+				if(strcmp(stype, "double") == 0|| strcmp(stype,"char") == 0|| strcmp(stype,"int") == 0) { // double * double, double * int, double * char
+					return "double";
+				}
+			}
+			return "int";
+		} else if(strcmp(token, "Comma") == 0) {
+			return stype;
+		} else if(strcmp(token, "Store") == 0) {
+			return ftype;
+		}
+	}
+	return "int";
 }
