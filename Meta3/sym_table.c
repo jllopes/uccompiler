@@ -145,16 +145,15 @@ void parse_table(Node *node, Symbol_Table *table){
 			} else if(strcmp(aux->token, "Declaration") == 0){
 				parse_declaration(aux, table, 0);
 			}
-			if(aux->brother == NULL){
+			if(aux->brother == NULL)
 				break;
-			}
 			aux = aux->brother;
 		}
 	}
 }
 
 void parse_func_declaration(Node *node, Symbol_Table *global){
-	Symbol_Table *table_aux, *global_aux = global;
+	Symbol_Table *table_aux = (Symbol_Table*) malloc(sizeof(Symbol_Table)), *global_aux = global;
 	Node *node_aux = node->child;
 	char *type = strdup(node_aux->token);
 	char *name = strdup(node_aux->brother->value);
@@ -169,7 +168,7 @@ void parse_func_declaration(Node *node, Symbol_Table *global){
 		symbol_aux = symbol_aux->next;
 	}
 	symbol_aux = create_symbol(name, type);
-	char *name_aux = malloc((strlen("Function") + strlen(name) + strlen("Symbol Table")) * sizeof(char));
+	char *name_aux = malloc((strlen("Function") + strlen(name) + strlen("Symbol Table")));
 	sprintf(name_aux, "%s %s %s","Function", name, "Symbol Table");
 	table_aux = create_table(name_aux, name); // Create symbol table for current function
 	add_return(table_aux, type);
@@ -197,6 +196,8 @@ void parse_func_declaration(Node *node, Symbol_Table *global){
 		} else {
 			insert_param(symbol_aux, NULL, node_aux->child->token);
 		}
+		if(node_aux->brother == NULL)
+			break;
 		node_aux = node_aux->brother;
 	}	
 	insert_symbol(global, symbol_aux); // Add function to global symbol table
@@ -385,9 +386,9 @@ void add_comparison_type(Node *node, Symbol_Table *local, Symbol_Table *global) 
 }
 
 void add_call_type(Node *node, Symbol_Table *local, Symbol_Table *global){
-	int gotten_params = 0, expected_params = 0;
+	//int gotten_params = 0, expected_params = 0;
     Node *node_aux = node->child->brother; // First param
-	Param *param = (Param*)malloc(sizeof(param));
+	/*Param *param = (Param*)malloc(sizeof(param));
 	Symbol *symbol_aux = global->symbol;
 	while(symbol_aux != NULL){
 		if(strcmp(symbol_aux->name, node->child->value) == 0){
@@ -396,16 +397,30 @@ void add_call_type(Node *node, Symbol_Table *local, Symbol_Table *global){
 		}
 		symbol_aux = symbol_aux->next;
 	}
+	if(symbol_aux == NULL){
+		printf("Symbol %s is not a function\n", node->child->value);
+		flag_semantic_error = 1;
+		return;
+	}
 	while(node_aux != NULL){
 		gotten_params++;
 		node_aux = node_aux->brother;
 	}
-	while(param != NULL){
-		if(strcmp(param->type, "void") != 0){
-			expected_params++;
+	if(param != NULL){
+		printf("..\n");
+		while(param != NULL){
+			printf("...\n");
+			if(strcmp(param->type, "void") != 0){
+				expected_params++;
+			}
+			printf("...\n");
+			if(param->next != NULL){
+				param = param->next;
+			} else{
+				break;
+			}
 		}
-		param = param->next;
-	}
+	}*/
 	node_aux = node->child->brother;
     while(node_aux != NULL){ // Find type of all params
         add_type(node_aux, local, global);
@@ -418,7 +433,6 @@ void add_call_type(Node *node, Symbol_Table *local, Symbol_Table *global){
 	if(gotten_params != expected_params){
 		printf("Wrong number of arguments to function %s (got %d, required %d)\n", node->child->value, gotten_params, expected_params);
 	}*/
-
     char *function_type = add_id_type(node->child, local, global);
     node->type = strdup(function_type);
 }
@@ -441,13 +455,16 @@ char* add_id_type(Node *node, Symbol_Table *local, Symbol_Table *global) { // Fi
     symbol_aux = global->symbol;
     while(symbol_aux != NULL){
 		//printf("Variable(global table): %s\n",symbol_aux->name);
-        if(strcmp(symbol_aux->name, node->value)==0) { // Declared in local table
+        if(strcmp(symbol_aux->name, node->value)==0) { // Declared in global table
             if(symbol_aux->param != NULL){
                 node->param = symbol_aux->param;;
                 node->function = 1;
             }
+			//printf("symbol: %s, type: %s\n", symbol_aux->name, symbol_aux->type);
             return symbol_aux->type;
         }
+		if(symbol_aux->next == NULL)
+			break;
         symbol_aux = symbol_aux->next;
     } 
     return "undef"; // symbol doesn't exist => semantic error
