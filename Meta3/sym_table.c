@@ -387,7 +387,6 @@ void add_comparison_type(Node *node, Symbol_Table *local, Symbol_Table *global) 
 void add_call_type(Node *node, Symbol_Table *local, Symbol_Table *global){
 	int gotten_params = 0, expected_params = 0;
     Node *node_aux = node->child->brother; // First param
-	printf("%s\n", node->token);
 	Param *param = (Param*)malloc(sizeof(param));
 	Symbol *symbol_aux = global->symbol;
 	while(symbol_aux != NULL){
@@ -402,7 +401,9 @@ void add_call_type(Node *node, Symbol_Table *local, Symbol_Table *global){
 		node_aux = node_aux->brother;
 	}
 	while(param != NULL){
-		expected_params++;
+		if(strcmp(param->type, "void") != 0){
+			expected_params++;
+		}
 		param = param->next;
 	}
 	node_aux = node->child->brother;
@@ -412,7 +413,7 @@ void add_call_type(Node *node, Symbol_Table *local, Symbol_Table *global){
     }
 	add_type(node->child, local, global); // Find type of function
 	/*if(node->child->function == 0){ // SEMANTIC
-		Symbol <node->child->value> is not a function
+		printf("Symbol %s is not a function\n", node->child->value);
 	}
 	if(gotten_params != expected_params){
 		printf("Wrong number of arguments to function %s (got %d, required %d)\n", node->child->value, gotten_params, expected_params);
