@@ -69,6 +69,7 @@ REALLIT (([0-9]+)"."([0-9]+)?([eE][+-]?[0-9]+)?)|"."[0-9]+([eE][+-]?[0-9]+)?|[0-
 	<MULTICOMMENT>.					{column+=yyleng;}
 \n|\r|\r\n							{line++; column=1;}
 \t|" "								{column++;}
+"//"[^\n\r]*						{column+=yyleng;}
 <<EOF>>								{column++; return 0;}
 {RESERVED}							{if(flag_lexical != 0){printf("RESERVED(%s)\n",yytext);} column+=yyleng; if(flag_syntax != 0){yylval.token = create_token(line, column, yytext); return RESERVED;};}
 {CHAR}								{if(flag_lexical != 0){printf("CHAR\n");} column+=yyleng; if(flag_syntax != 0){yylval.token = create_token(line, column, yytext); return CHAR;};}
