@@ -3,9 +3,9 @@
 #include <string.h>
 #include "sym_table.h"
 
-Symbol_Table* create_table(char *title, char *name){
+Symbol_Table* create_table(int type, char *name){
 	Symbol_Table* table = (Symbol_Table*) malloc(sizeof(Symbol_Table));
-	table->title = strdup(title);
+	table->type = type;
 	if(name != NULL){
 		table->name = strdup(name);
 	} else {
@@ -20,7 +20,7 @@ Param* insert_param(Symbol *sym, char *name, char *type){
 	Param* param = (Param*) malloc(sizeof(Param));
 	Param* aux = (Param*) malloc(sizeof(Param));
 	if(name != NULL){
-		param->name = lower_case(name);
+		param->name = strdup(name);
 	} else {
 		param->name = NULL;
 	}
@@ -81,7 +81,11 @@ void print_params(Symbol *symbol){
 }
 
 void print_table(Symbol_Table *table){
-	printf("===== %s =====\n", table->title);
+	if(table->type == 0){
+		printf("===== Global Symbol Table =====\n");
+	} else if(table->type == 1){
+		printf("===== Function %s Symbol Table =====\n", table->name);
+	}
 	if(table->symbol != NULL){
 		Symbol *aux = table->symbol;
 		if(aux->is_param == 1){
@@ -121,7 +125,7 @@ void print_all_tables(Symbol_Table *table){
 
 Symbol_Table* create_default_table(){
 	Symbol *sym_aux;
-	Symbol_Table *global = create_table("Global Symbol Table", NULL);
+	Symbol_Table *global = create_table(0, NULL);
 	sym_aux = create_symbol("putchar", "int");
 	insert_param(sym_aux, NULL, "int");
 	insert_symbol(global, sym_aux);
@@ -159,7 +163,7 @@ void parse_func_declaration(Node *node, Symbol_Table *global){
 	char *name = strdup(node_aux->brother->value);
 	Symbol *symbol_aux = (Symbol*)malloc(sizeof(Symbol));
 	symbol_aux = global->symbol;
-	printf("before first while\n");
+	//printf("before first while\n");
 	while(symbol_aux != NULL) { // Goes through global symbol table to see if function was already declared
 		if(strcmp(name, symbol_aux->name) == 0){ // Was already declared
 			return;
@@ -168,32 +172,30 @@ void parse_func_declaration(Node *node, Symbol_Table *global){
 			break;
 		symbol_aux = symbol_aux->next;
 	}
-	printf("after first while\n");
+	//printf("after first while\n");
 	symbol_aux = create_symbol(name, type);
-	printf("after create symbol\n");
-	char *name_aux = malloc((strlen("Function") + strlen(name) + strlen("Symbol Table") * sizeof(char)));
-	sprintf(name_aux, "%s %s %s","Function", name, "Symbol Table");
-	table_aux = create_table(name_aux, name); // Create symbol table for current function
-	printf("after create table\n");
+	//printf("after create symbol\n");
+	table_aux = create_table(1, name); // Create symbol table for current function
+	//printf("after create table\n");
 	add_return(table_aux, type);
-	printf("before second while\n");
+	//printf("before second while\n");
 	while(global_aux->next != NULL){ // Adds table to global table brothers
 		global_aux = global_aux->next;
 	}
-	printf("after second while\n");
+	//printf("after second while\n");
 	global_aux->next = table_aux;
 	table_aux->definition = 0;
-	printf("before third while\n");
+	//printf("before third while\n");
 	while(strcmp(node_aux->token, "ParamList") != 0){ // Skips type and name
 		node_aux = node_aux->brother;
 	}
-	printf("after third while\n");
+	//printf("after third while\n");
 	if(node_aux == NULL){
 		return;
 	}
 	node_aux = node_aux->child; // Skip ParamList
 	symbol_aux = create_symbol(name, type);
-	printf("before param while\n");
+	//printf("before param while\n");
 	while(node_aux != NULL){ // Check if there are more ParamDeclaration
 		if(node_aux->child->brother != NULL){ // Checks if param has id
 			Symbol *symbol_sec_aux = (Symbol*) malloc(sizeof(Symbol));
@@ -209,7 +211,7 @@ void parse_func_declaration(Node *node, Symbol_Table *global){
 			break;
 		node_aux = node_aux->brother;
 	}	
-	printf("after param while\n");
+	//printf("after param while\n");
 	insert_symbol(global, symbol_aux); // Add function to global symbol table
 }
 
@@ -234,9 +236,7 @@ void parse_func_definition(Node *node, Symbol_Table *global){
 	}
 	global_aux = global;
 	if(declared == 0){
-		char *name_aux = malloc((strlen("Function") + strlen(name) + strlen("Symbol Table")) * sizeof(char));
-		sprintf(name_aux, "%s %s %s","Function", name, "Symbol Table");
-		table_aux = create_table(name_aux, name); // Create symbol table for current function
+		table_aux = create_table(1, name); // Create symbol table for current function
 		add_return(table_aux, type);
 		while(global_aux->next != NULL){ // Adds table to global table brothers
 			global_aux = global_aux->next;
@@ -285,7 +285,7 @@ void parse_func_definition(Node *node, Symbol_Table *global){
 void find_declaration(Node *node, Symbol_Table *local){
 	Node *node_aux = node;
 	while(node_aux != NULL){ // Goes through FuncBody children
-		if(strcmp(node_aux->token, "Declaration") == 0){ // Found declaration
+		if(strcmp(node_aux->token, "Declaration") == 0){ // Found declaration SIGSEGV
 			parse_declaration(node_aux, local, 1);
 		} else if(node_aux->child != NULL){ // Found condition
 			find_declaration(node_aux->child, local); // Recursive call
@@ -293,6 +293,7 @@ void find_declaration(Node *node, Symbol_Table *local){
 		node_aux = node_aux->brother;
 	}
 }
+
 void add_return(Symbol_Table *table, char *type){
 	Symbol *symbol_aux = (Symbol*) malloc(sizeof(Symbol));
 	symbol_aux->name = strdup("return");

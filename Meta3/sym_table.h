@@ -15,13 +15,14 @@ struct Symbol{
 struct Symbol_Table{
 	char *title;
 	char *name;
+	int type;
 	int definition;
 	Symbol_Table *next;
 	Symbol *symbol;
 };
 
 Symbol_Table* sym_table;
-Symbol_Table* create_table(char *title, char *name);
+Symbol_Table* create_table(int type, char *name);
 Symbol* create_symbol(char *name, char *type);
 void insert_symbol(Symbol_Table *table, Symbol *symbol);
 Symbol_Table* create_default_table();

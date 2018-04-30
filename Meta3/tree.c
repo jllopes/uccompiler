@@ -4,20 +4,20 @@
 #include "tree.h"
 
 Node* create_node(char* token, char* value){ /* Creates n0d3 */
+    //printf("start create node\n");
     Node* tmp = (Node*) malloc(sizeof(Node));
     tmp->child = NULL; 
     tmp->brother = NULL; 
-    tmp->token = (char*) malloc(sizeof(token)* sizeof(char));
+    tmp->token = strdup(token);
     tmp->param = NULL;
     tmp->type = NULL;
     tmp->function = 0;
-    strcpy(tmp->token, token);
     if(value != NULL){
-        tmp->value = (char*) malloc(sizeof(value)* sizeof(char));
-        strcpy(tmp->value, value);
+        tmp->value = strdup(value);
     } else {
         tmp->value = NULL;
     }
+    //printf("end create node\n");
     return tmp; /* returns n0d3 */
 }
 
@@ -30,6 +30,7 @@ Token* create_token(int line, int column, char *id){ /* Create token to return f
 }
 
 void insert_first_child(Node *node, Node *child_node) { /* child_node = typespec */
+    //printf("start insert first child\n");
     if(child_node == NULL) /* If node to insert is null end function */
         return;
 
@@ -47,11 +48,15 @@ void insert_first_child(Node *node, Node *child_node) { /* child_node = typespec
         tmp = uncle->child;
         uncle->child = create_node(child_node->token, NULL);
         uncle->child->brother = tmp;
+        if(uncle->brother == NULL)
+            break;
         uncle = uncle->brother;
     }
+    //printf("end insert first child\n");
 }
 
 Node* insert_child(Node *node, Node *child_node) {
+    //printf("start insert child\n");
     if(node == NULL) /* If node to insert is null end function */
         return NULL;
     if(node->child == NULL){ /* If node has no child, create one */
@@ -64,28 +69,34 @@ Node* insert_child(Node *node, Node *child_node) {
         tmp = node->child->brother;
         while (tmp != NULL){ /* Goes through all the brothers */
             prev = tmp;
+            if(tmp->brother == NULL)
+                break;
             tmp = tmp->brother;
         }
         prev->brother = (Node*) malloc(sizeof(Node));
         prev->brother=child_node;
     }
+    //printf("end insert child\n");
     return node;
 }
 
 Node* insert_brother(Node *node, Node *brother_node) {
+    //printf("start insert brother\n");
     if(node == NULL) /* If node to insert is null end function */
         return NULL;
     Node *tmp = (Node*) malloc(sizeof(Node));
-        Node *prev = (Node*) malloc(sizeof(Node));
+    Node *prev = (Node*) malloc(sizeof(Node));
     prev = node;
     tmp = node->brother;
-
     while (tmp != NULL){ /* Goes through all the brothers */
         prev = tmp;
+        if(tmp->brother == NULL)
+            break;
         tmp = tmp->brother;
     }
     prev->brother = (Node*) malloc(sizeof(Node));
     prev->brother=brother_node;
+    //printf("end insert brother\n");
     return node;
 }
 
