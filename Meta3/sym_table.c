@@ -40,7 +40,7 @@ Param* insert_param(Symbol *sym, char *name, char *type){
 
 Symbol* create_symbol(char *name, char *type){
 	Symbol *sym = (Symbol*) malloc(sizeof(Symbol));
-	sym->name = lower_case(name);
+	sym->name = strdup(name);
 	sym->type = lower_case(type);
 	sym->param = NULL;
 	sym->is_param = 0;
@@ -159,7 +159,7 @@ void parse_func_declaration(Node *node, Symbol_Table *global){
 	char *name = strdup(node_aux->brother->value);
 	Symbol *symbol_aux = (Symbol*)malloc(sizeof(Symbol));
 	symbol_aux = global->symbol;
-	//printf("before first while\n");
+	printf("before first while\n");
 	while(symbol_aux != NULL) { // Goes through global symbol table to see if function was already declared
 		if(strcmp(name, symbol_aux->name) == 0){ // Was already declared
 			return;
@@ -168,32 +168,32 @@ void parse_func_declaration(Node *node, Symbol_Table *global){
 			break;
 		symbol_aux = symbol_aux->next;
 	}
-	//printf("after first while\n");
+	printf("after first while\n");
 	symbol_aux = create_symbol(name, type);
-	//printf("after create symbol\n");
+	printf("after create symbol\n");
 	char *name_aux = malloc((strlen("Function") + strlen(name) + strlen("Symbol Table") * sizeof(char)));
 	sprintf(name_aux, "%s %s %s","Function", name, "Symbol Table");
 	table_aux = create_table(name_aux, name); // Create symbol table for current function
-	//printf("after create table\n");
+	printf("after create table\n");
 	add_return(table_aux, type);
-	//printf("before second while\n");
+	printf("before second while\n");
 	while(global_aux->next != NULL){ // Adds table to global table brothers
 		global_aux = global_aux->next;
 	}
-	//printf("after second while\n");
+	printf("after second while\n");
 	global_aux->next = table_aux;
 	table_aux->definition = 0;
-	//printf("before third while\n");
+	printf("before third while\n");
 	while(strcmp(node_aux->token, "ParamList") != 0){ // Skips type and name
 		node_aux = node_aux->brother;
 	}
-	//printf("after third while\n");
+	printf("after third while\n");
 	if(node_aux == NULL){
 		return;
 	}
 	node_aux = node_aux->child; // Skip ParamList
 	symbol_aux = create_symbol(name, type);
-	//printf("before param while\n");
+	printf("before param while\n");
 	while(node_aux != NULL){ // Check if there are more ParamDeclaration
 		if(node_aux->child->brother != NULL){ // Checks if param has id
 			Symbol *symbol_sec_aux = (Symbol*) malloc(sizeof(Symbol));
@@ -209,7 +209,7 @@ void parse_func_declaration(Node *node, Symbol_Table *global){
 			break;
 		node_aux = node_aux->brother;
 	}	
-	//printf("after param while\n");
+	printf("after param while\n");
 	insert_symbol(global, symbol_aux); // Add function to global symbol table
 }
 
@@ -337,11 +337,9 @@ void annotated_tree(Node *root, Symbol_Table *local, Symbol_Table *global) {
         if(result == -1 && node->child != NULL) {
             annotated_tree(node->child, local, global);
         }
-		if(node->brother != NULL){
-        	node = node->brother;
-		} else {
-			return;
-		}
+		if(node->brother != NULL)
+			break;
+		node = node->brother;
     }
 }
 
