@@ -167,12 +167,11 @@ void parse_table(Node *node, Symbol_Table *table){
 
 void parse_func_declaration(Node *node, Symbol_Table *global){
 	Symbol_Table *table_aux = (Symbol_Table*) malloc(sizeof(Symbol_Table)), *global_aux = global;
-	Node *node_aux = node->child;
-	char *type = strdup(node_aux->token);
-	char *name = strdup(node_aux->brother->value);
+	Node *node_aux = node->child; // Skips FuncDeclaration node
+	char *type = strdup(node_aux->token); // Copies type to aux variable
+	char *name = strdup(node_aux->brother->value); // Copies name to aux variable
 	Symbol *symbol_aux = (Symbol*)malloc(sizeof(Symbol));
-	symbol_aux = global->symbol;
-	//printf("before first while\n");
+	symbol_aux = global->symbol; // Finds first symbol on global table (never null because of default functions)
 	while(symbol_aux != NULL) { // Goes through global symbol table to see if function was already declared
 		if(strcmp(name, symbol_aux->name) == 0){ // Was already declared
 			return;
@@ -181,30 +180,22 @@ void parse_func_declaration(Node *node, Symbol_Table *global){
 			break;
 		symbol_aux = symbol_aux->next;
 	}
-	//printf("after first while\n");
-	symbol_aux = create_symbol(name, type);
-	//printf("after create symbol\n");
+	symbol_aux = create_symbol(name, type); // Create function symbol to add to global table
 	table_aux = create_table(1, name); // Create symbol table for current function
-	//printf("after create table\n");
-	add_return(table_aux, type);
-	//printf("before second while\n");
+	// Table is create here to make sure it appears before next FuncDefinition, won't be printed if the functions isn't defined
+	add_return(table_aux, type); // Adds return type to local table
 	while(global_aux->next != NULL){ // Adds table to global table brothers
 		global_aux = global_aux->next;
 	}
-	//printf("after second while\n");
-	global_aux->next = table_aux;
-	table_aux->definition = 0;
-	//printf("before third while\n");
+	global_aux->next = table_aux; // Add local table to global brothers
+	table_aux->definition = 0; // It's a declaration, variable says the functions hasn't yet been defined
 	while(strcmp(node_aux->token, "ParamList") != 0){ // Skips type and name
 		node_aux = node_aux->brother;
 	}
-	//printf("after third while\n");
 	if(node_aux == NULL){
 		return;
 	}
-	node_aux = node_aux->child; // Skip ParamList
-	symbol_aux = create_symbol(name, type);
-	//printf("before param while\n");
+	node_aux = node_aux->child; // Skip ParamList, node_aux is now the first ParamDeclaration (1 is mandatory)
 	while(node_aux != NULL){ // Check if there are more ParamDeclaration
 		if(node_aux->child->brother != NULL){ // Checks if param has id
 			Symbol *symbol_sec_aux = (Symbol*) malloc(sizeof(Symbol));
@@ -212,15 +203,14 @@ void parse_func_declaration(Node *node, Symbol_Table *global){
 			symbol_sec_aux->name = strdup(node_aux->child->brother->value);
 			symbol_sec_aux->type = strdup(lower_case(node_aux->child->token));
 			symbol_sec_aux->is_param = 1;
-			insert_symbol(table_aux, symbol_sec_aux);
+			insert_symbol(table_aux, symbol_sec_aux); // Insert param on local table
 		} else {
 			insert_param(symbol_aux, NULL, node_aux->child->token);
 		}
 		if(node_aux->brother == NULL)
 			break;
 		node_aux = node_aux->brother;
-	}	
-	//printf("after param while\n");
+	}
 	insert_symbol(global, symbol_aux); // Add function to global symbol table
 }
 
@@ -235,22 +225,22 @@ void parse_func_definition(Node *node, Symbol_Table *global){
 	int declared = 0;
 	while(global_aux != NULL) { // Goes through global symbol table to see if function was already declared
 		if(strcmp(name, global_aux->name) == 0){ // Was already declared
-			declared = 1;
+			declared = 1; // To check if there is a need to create local table
 			table_aux = global_aux;
-			if(global_aux->definition == 1){ // Was already defined
+			if(global_aux->definition == 1){ // Was already defined, prevents duplicated definitions
 				return;
 			}
 		}
 		global_aux = global_aux->next;
 	}
 	global_aux = global;
-	if(declared == 0){
+	if(declared == 0){ // Function hasn't been declared yet
 		table_aux = create_table(1, name); // Create symbol table for current function
 		add_return(table_aux, type);
 		while(global_aux->next != NULL){ // Adds table to global table brothers
 			global_aux = global_aux->next;
 		}
-		global_aux->next = table_aux;
+		global_aux->next = table_aux; // Add local table to global brothers
 		while(strcmp(node_aux->token, "ParamList") != 0){ // Skips type and name
 			node_aux = node_aux->brother;
 		}
@@ -258,7 +248,7 @@ void parse_func_definition(Node *node, Symbol_Table *global){
 			return;
 		}
 		node_sec_aux = node_aux->child; // Skip ParamList
-		symbol_aux = create_symbol(name, type);
+		symbol_aux = create_symbol(name, type); // Creates symbol to add to global table
 		insert_symbol(global, symbol_aux); // Add function to global symbol table
 		while(node_sec_aux != NULL){ // Check if there are more ParamDeclaration
 			if(node_sec_aux->child->brother != NULL){ // Checks if param has id
@@ -285,9 +275,9 @@ void parse_func_definition(Node *node, Symbol_Table *global){
 			node_aux = node_aux->brother;
 		}
 		table_aux->symbol->next = NULL;
-		node_sec_aux = node_aux->child;
+		node_sec_aux = node_aux->child; // Skip ParamList
 		while(node_sec_aux != NULL){
-			if(node_sec_aux->child->brother != NULL){
+			if(node_sec_aux->child->brother != NULL){ // Param has id, is added to local table
 				symbol_sec_aux = (Symbol*) malloc(sizeof(Symbol));
 				symbol_sec_aux->name = strdup(node_sec_aux->child->brother->value);
 				symbol_sec_aux->type = strdup(lower_case(node_sec_aux->child->token));
@@ -318,7 +308,7 @@ void find_declaration(Node *node, Symbol_Table *local){
 	Node *node_aux = node;
 	//printf("%s\n", node_aux->token);
 	while(node_aux != NULL){ // Goes through FuncBody children
-		if(strcmp(node_aux->token, "Declaration") == 0){ // Found declaration (SIGSEGV??)
+		if(strcmp(node_aux->token, "Declaration") == 0){ // Found declaration
 			parse_declaration(node_aux, local, 1);
 		} else if(node_aux->child != NULL){ // Found condition
 			find_declaration(node_aux->child, local); // Recursive call
@@ -341,7 +331,7 @@ void parse_declaration(Node *node, Symbol_Table *table, int recursive){
 	while(symbol_sec_aux != NULL) { // Goes through symbol table to see if variable was already declared
 		if(strcmp(node_aux->child->brother->value, symbol_sec_aux->name) == 0){ // Was already declared
 			/* Symbol <token> already defined */ // SEMANTIC
-			//printf("Line: %d, col: %d: Symbol %s already defined\n", node_aux->child->brother->line, node_aux->child->brother->column);
+			//printf("Line: %d, col: %d: Symbol %s already defined\n", node_aux->child->brother->line, (int)((node_aux->child->brother->column)-strlen(node->child->brother->value)), node->child->brother->value);
 			return;
 		}
 		symbol_sec_aux = symbol_sec_aux->next;
@@ -393,7 +383,7 @@ int add_type(Node *node, Symbol_Table *local, Symbol_Table *global) {
     } else if(strcmp(node->token, "Call") == 0){ // Call
 		add_call_type(node, local, global);
 		return 1;
-    } else if(strcmp(node->token, "Eq") == 0 || strcmp(node->token, "Ne") == 0 || strcmp(node->token, "Le") == 0 || strcmp(node->token, "Ge") == 0 || strcmp(node->token, "Lt") == 0 || strcmp(node->token, "Gt") == 0 || strcmp(node->token, "And") == 0 || strcmp(node->token, "Or") == 0) { // Comparisons
+    } else if(strcmp(node->token, "Eq") == 0 || strcmp(node->token, "Ne") == 0 || strcmp(node->token, "Le") == 0 || strcmp(node->token, "Ge") == 0 || strcmp(node->token, "Lt") == 0 || strcmp(node->token, "Gt") == 0 || strcmp(node->token, "And") == 0 || strcmp(node->token, "Or") == 0 || strcmp(node->token, "BitwiseAnd") == 0 || strcmp(node->token, "BitwiseOr") == 0 || strcmp(node->token, "BitwiseXor") == 0) { // Comparisons
 		add_comparison_type(node, local, global);
 		return 1;
     } else if(strcmp(node->token, "IntLit") == 0 || strcmp(node->token, "ChrLit") == 0 || strcmp(node->token, "RealLit") == 0) { // Literals
@@ -431,53 +421,45 @@ void add_comparison_type(Node *node, Symbol_Table *local, Symbol_Table *global) 
 }
 
 void add_call_type(Node *node, Symbol_Table *local, Symbol_Table *global){
-	//int gotten_params = 0, expected_params = 0;
+	int gotten_params = 0, expected_params = 0;
     Node *node_aux = node->child->brother; // First param
-	/*Param *param = (Param*)malloc(sizeof(param));
+	Param *param = (Param*)malloc(sizeof(param));
 	Symbol *symbol_aux = global->symbol;
 	while(symbol_aux != NULL){
 		if(strcmp(symbol_aux->name, node->child->value) == 0){
+			printf("param defined");
 			param = symbol_aux->param;
 			break;
 		}
 		symbol_aux = symbol_aux->next;
 	}
-	if(symbol_aux == NULL){
-		printf("Symbol %s is not a function\n", node->child->value);
-		flag_semantic_error = 1;
-		return;
-	}
 	while(node_aux != NULL){
 		gotten_params++;
 		node_aux = node_aux->brother;
 	}
-	if(param != NULL){
-		printf("..\n");
+	if(param->type != NULL){
 		while(param != NULL){
-			printf("...\n");
 			if(strcmp(param->type, "void") != 0){
 				expected_params++;
 			}
-			printf("...\n");
 			if(param->next != NULL){
 				param = param->next;
 			} else{
 				break;
 			}
 		}
-	}*/
+	}
 	node_aux = node->child->brother;
     while(node_aux != NULL){ // Find type of all params
         add_type(node_aux, local, global);
         node_aux = node_aux->brother;
     }
 	add_type(node->child, local, global); // Find type of function
-	/*if(node->child->function == 0){ // SEMANTIC
-		printf("Line: %d, col: %d: Symbol %s is not a function\n", node->child->line, node->child->column, node->child->value);
+	if(expected_params == 0){ // SEMANTIC
+		printf("Line: %d, col: %d: Symbol %s is not a function\n", node->child->line, (int)((node->child->column)-strlen(node->child->value)), node->child->value);
+	} else if(gotten_params != expected_params){
+		printf("Line: %d, col: %d: Wrong number of arguments to function %s (got %d, required %d)\n", node->child->line, (int)((node->child->column)-strlen(node->child->value)), node->child->value, gotten_params, expected_params);
 	}
-	if(gotten_params != expected_params){
-		printf("Line: %d, col: %d: Wrong number of arguments to function %s (got %d, required %d)\n", node->child->line, node->child->column, node->child->value, gotten_params, expected_params);
-	}*/
     char *function_type = add_id_type(node->child, local, global);
     node->type = strdup(function_type);
 }
