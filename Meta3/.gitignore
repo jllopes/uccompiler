@@ -1,8 +1,14 @@
+###
+uccompiler.DSYM/*
 # Yacc
 y.tab.c
 y.tab.h
 y.output
-###
-uccompiler.DSYM/*
+# Lex
+lex.yy.c
+# Exe
+uccompiler
+# Zip
+uccompiler.zip
 # Tests
 tests/*
