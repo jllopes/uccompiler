@@ -529,12 +529,12 @@ static const yytype_uint16 yyrline[] =
        0,    41,    41,    47,    51,    55,    65,    73,    81,    89,
       92,   100,   101,   109,   117,   125,   126,   129,   136,   142,
      149,   153,   156,   161,   167,   174,   177,   185,   188,   189,
-     190,   191,   192,   195,   198,   204,   205,   206,   214,   215,
-     228,   247,   259,   263,   267,   270,   278,   281,   282,   285,
-     298,   311,   323,   335,   346,   357,   368,   379,   390,   401,
-     412,   423,   434,   445,   456,   467,   478,   486,   494,   502,
-     512,   516,   517,   518,   519,   520,   521,   522,   525,   537,
-     540,   549
+     190,   191,   192,   195,   199,   205,   206,   207,   215,   216,
+     229,   248,   260,   264,   268,   271,   279,   282,   283,   286,
+     299,   312,   324,   336,   347,   358,   369,   380,   391,   402,
+     413,   424,   435,   446,   457,   468,   479,   487,   495,   503,
+     513,   517,   518,   519,   520,   521,   522,   523,   526,   538,
+     541,   550
 };
 #endif
 
@@ -1597,7 +1597,7 @@ yyreduce:
         case 2:
 #line 41 "uccompiler.y"
     {
-                                                                                  root = create_node("Program", NULL);
+                                                                                  root = create_node("Program", NULL, 0, 0);
                                                                                   insert_child(root,(yyvsp[(1) - (1)].node));
                                                                                 }
     break;
@@ -1674,7 +1674,7 @@ yyreduce:
   case 10:
 #line 92 "uccompiler.y"
     {
-                                                                                  (yyval.node) = create_node("FuncDefinition", NULL); 
+                                                                                  (yyval.node) = create_node("FuncDefinition", NULL, 0, 0); 
                                                                                   insert_child((yyval.node), (yyvsp[(1) - (3)].node)); 
                                                                                   insert_child((yyval.node), (yyvsp[(2) - (3)].node)); 
                                                                                   insert_child((yyval.node), (yyvsp[(3) - (3)].node));
@@ -1683,13 +1683,13 @@ yyreduce:
 
   case 11:
 #line 100 "uccompiler.y"
-    {(yyval.node) = create_node("FuncBody", NULL);}
+    {(yyval.node) = create_node("FuncBody", NULL, 0, 0);}
     break;
 
   case 12:
 #line 101 "uccompiler.y"
     {
-                                                                                  (yyval.node) = create_node("FuncBody", NULL); 
+                                                                                  (yyval.node) = create_node("FuncBody", NULL, 0, 0); 
                                                                                   if((yyvsp[(2) - (3)].node) != NULL) {
                                                                                     insert_child((yyval.node), (yyvsp[(2) - (3)].node));
                                                                                   }
@@ -1733,7 +1733,7 @@ yyreduce:
   case 17:
 #line 129 "uccompiler.y"
     {
-                                                                                  (yyval.node) = create_node("FuncDeclaration", NULL);
+                                                                                  (yyval.node) = create_node("FuncDeclaration", NULL, 0, 0);
                                                                                   insert_child((yyval.node), (yyvsp[(1) - (3)].node)); 
                                                                                   insert_child((yyval.node), (yyvsp[(2) - (3)].node));
                                                                                 }
@@ -1742,7 +1742,7 @@ yyreduce:
   case 18:
 #line 136 "uccompiler.y"
     {
-                                                                                  (yyval.node) = create_node("Id",(yyvsp[(1) - (4)].token)->id); 
+                                                                                  (yyval.node) = create_node("Id",(yyvsp[(1) - (4)].token)->id, (yyvsp[(1) - (4)].token)->line, (yyvsp[(1) - (4)].token)->column); 
                                                                                   insert_brother((yyval.node), (yyvsp[(3) - (4)].node));
                                                                                 }
     break;
@@ -1750,7 +1750,7 @@ yyreduce:
   case 19:
 #line 142 "uccompiler.y"
     {
-                                                                                  (yyval.node) = create_node("ParamList", NULL); 
+                                                                                  (yyval.node) = create_node("ParamList", NULL, 0, 0); 
                                                                                   insert_child((yyval.node), (yyvsp[(1) - (2)].node)); 
                                                                                   insert_child((yyval.node), (yyvsp[(2) - (2)].node));
                                                                                 }
@@ -1772,16 +1772,16 @@ yyreduce:
   case 22:
 #line 156 "uccompiler.y"
     {
-                                                                                  (yyval.node) = create_node("ParamDeclaration", NULL); 
+                                                                                  (yyval.node) = create_node("ParamDeclaration", NULL, 0, 0); 
                                                                                   insert_child((yyval.node), (yyvsp[(1) - (2)].node)); 
-                                                                                  insert_child((yyval.node), create_node("Id",(yyvsp[(2) - (2)].token)->id));
+                                                                                  insert_child((yyval.node), create_node("Id",(yyvsp[(2) - (2)].token)->id, (yyvsp[(2) - (2)].token)->line, (yyvsp[(2) - (2)].token)->column));
                                                                                 }
     break;
 
   case 23:
 #line 161 "uccompiler.y"
     {
-                                                                                  (yyval.node) = create_node("ParamDeclaration", NULL); 
+                                                                                  (yyval.node) = create_node("ParamDeclaration", NULL, 0, 0); 
                                                                                   insert_child((yyval.node), (yyvsp[(1) - (1)].node));
                                                                                 }
     break;
@@ -1821,59 +1821,60 @@ yyreduce:
 
   case 28:
 #line 188 "uccompiler.y"
-    {(yyval.node) = create_node("Char", NULL);}
+    {(yyval.node) = create_node("Char", NULL, (yyvsp[(1) - (1)].token)->line, (yyvsp[(1) - (1)].token)->column);}
     break;
 
   case 29:
 #line 189 "uccompiler.y"
-    {(yyval.node) = create_node("Int", NULL);}
+    {(yyval.node) = create_node("Int", NULL, (yyvsp[(1) - (1)].token)->line, (yyvsp[(1) - (1)].token)->column);}
     break;
 
   case 30:
 #line 190 "uccompiler.y"
-    {(yyval.node) = create_node("Void", NULL);}
+    {(yyval.node) = create_node("Void", NULL, (yyvsp[(1) - (1)].token)->line, (yyvsp[(1) - (1)].token)->column);}
     break;
 
   case 31:
 #line 191 "uccompiler.y"
-    {(yyval.node) = create_node("Short", NULL);}
+    {(yyval.node) = create_node("Short", NULL, (yyvsp[(1) - (1)].token)->line, (yyvsp[(1) - (1)].token)->column);}
     break;
 
   case 32:
 #line 192 "uccompiler.y"
-    {(yyval.node) = create_node("Double", NULL);}
+    {(yyval.node) = create_node("Double", NULL, (yyvsp[(1) - (1)].token)->line, (yyvsp[(1) - (1)].token)->column);}
     break;
 
   case 33:
 #line 195 "uccompiler.y"
     {
-                                                                                  (yyval.node) = create_node("Declaration", NULL); insert_child((yyval.node),create_node("Id", (yyvsp[(1) - (3)].token)->id)); 
+                                                                                  (yyval.node) = create_node("Declaration", NULL, 0, 0); 
+                                                                                  insert_child((yyval.node),create_node("Id", (yyvsp[(1) - (3)].token)->id, (yyvsp[(1) - (3)].token)->line, (yyvsp[(1) - (3)].token)->column)); 
                                                                                   insert_child((yyval.node), (yyvsp[(3) - (3)].node));}
     break;
 
   case 34:
-#line 198 "uccompiler.y"
+#line 199 "uccompiler.y"
     {
-                                                                                  (yyval.node) = create_node("Declaration", NULL); 
-                                                                                  insert_child((yyval.node), create_node("Id", (yyvsp[(1) - (1)].token)->id));
+                                                                                  (yyval.node) = create_node("Declaration", NULL, 0, 0); 
+                                                                                  insert_child((yyval.node), create_node("Id", (yyvsp[(1) - (1)].token)->id, (yyvsp[(1) - (1)].token)->line, (yyvsp[(1) - (1)].token)->column));
                                                                                 }
     break;
 
   case 35:
-#line 204 "uccompiler.y"
+#line 205 "uccompiler.y"
     {(yyval.node) = (yyvsp[(1) - (2)].node);}
     break;
 
   case 36:
-#line 205 "uccompiler.y"
+#line 206 "uccompiler.y"
     {(yyval.node) = NULL;}
     break;
 
   case 37:
-#line 206 "uccompiler.y"
+#line 207 "uccompiler.y"
     {
                                                                                   if((yyvsp[(2) - (3)].node) != NULL && (yyvsp[(2) - (3)].node)->brother != NULL) {
-                                                                                    (yyval.node) = create_node("StatList", NULL); 
+                                                                                    (yyval.node) = create_node("StatList", NULL, 0, 0); 
                                                                                     insert_child((yyval.node), (yyvsp[(2) - (3)].node));
                                                                                   } else {
                                                                                     (yyval.node) = (yyvsp[(2) - (3)].node);
@@ -1882,43 +1883,43 @@ yyreduce:
     break;
 
   case 38:
-#line 214 "uccompiler.y"
+#line 215 "uccompiler.y"
     {(yyval.node) = NULL;}
     break;
 
   case 39:
-#line 215 "uccompiler.y"
+#line 216 "uccompiler.y"
     {
-                                                                                  (yyval.node) = create_node("If", NULL); 
+                                                                                  (yyval.node) = create_node("If", NULL, (yyvsp[(1) - (5)].token)->line, (yyvsp[(1) - (5)].token)->column); 
                                                                                   insert_child((yyval.node), (yyvsp[(3) - (5)].node)); 
                                                                                   if((yyvsp[(5) - (5)].node) == NULL) {
-                                                                                    insert_child((yyval.node), create_node("Null", NULL));
+                                                                                    insert_child((yyval.node), create_node("Null", NULL, 0, 0));
                                                                                   } else if((yyvsp[(5) - (5)].node) != NULL && (yyvsp[(5) - (5)].node)->brother != NULL) {
-                                                                                    insert_child((yyval.node), create_node("StatList", NULL)); 
+                                                                                    insert_child((yyval.node), create_node("StatList", NULL, 0, 0)); 
                                                                                     insert_child((yyval.node)->child->brother, (yyvsp[(5) - (5)].node));
                                                                                   } else {
                                                                                     insert_child((yyval.node), (yyvsp[(5) - (5)].node));
                                                                                   } 
-                                                                                  insert_child((yyval.node), create_node("Null", NULL));
+                                                                                  insert_child((yyval.node), create_node("Null", NULL, 0, 0));
                                                                                 }
     break;
 
   case 40:
-#line 228 "uccompiler.y"
+#line 229 "uccompiler.y"
     {
-                                                                                  (yyval.node) = create_node("If", NULL); 
+                                                                                  (yyval.node) = create_node("If", NULL, (yyvsp[(1) - (7)].token)->line, (yyvsp[(1) - (7)].token)->column); 
                                                                                   insert_child((yyval.node), (yyvsp[(3) - (7)].node)); 
                                                                                   if((yyvsp[(5) - (7)].node) == NULL) {
-                                                                                    insert_child((yyval.node), create_node("Null", NULL));
+                                                                                    insert_child((yyval.node), create_node("Null", NULL, 0, 0));
                                                                                   } else if((yyvsp[(5) - (7)].node) != NULL && (yyvsp[(5) - (7)].node)->brother != NULL) {
-                                                                                    insert_child((yyval.node), create_node("StatList", NULL)); 
+                                                                                    insert_child((yyval.node), create_node("StatList", NULL, 0, 0)); 
                                                                                     insert_child((yyval.node)->child->brother, (yyvsp[(5) - (7)].node));
                                                                                   } else{
                                                                                     insert_child((yyval.node), (yyvsp[(5) - (7)].node));
                                                                                   } if((yyvsp[(7) - (7)].node) == NULL) {
-                                                                                    insert_child((yyval.node), create_node("Null", NULL));
+                                                                                    insert_child((yyval.node), create_node("Null", NULL, 0, 0));
                                                                                   } else if((yyvsp[(7) - (7)].node) != NULL && (yyvsp[(7) - (7)].node)->brother != NULL) {
-                                                                                    insert_child((yyval.node), create_node("StatList", NULL)); 
+                                                                                    insert_child((yyval.node), create_node("StatList", NULL, 0, 0)); 
                                                                                     insert_child((yyval.node)->child->brother->brother, (yyvsp[(7) - (7)].node));
                                                                                   } else{
                                                                                     insert_child((yyval.node), (yyvsp[(7) - (7)].node));
@@ -1927,44 +1928,44 @@ yyreduce:
     break;
 
   case 41:
-#line 247 "uccompiler.y"
+#line 248 "uccompiler.y"
     {
-                                                                                  (yyval.node) = create_node("While", NULL); 
+                                                                                  (yyval.node) = create_node("While", NULL, (yyvsp[(1) - (5)].token)->line, (yyvsp[(1) - (5)].token)->column); 
                                                                                   if((yyvsp[(3) - (5)].node)!=NULL) {
                                                                                     insert_child((yyval.node), (yyvsp[(3) - (5)].node));
                                                                                   } else {
-                                                                                    insert_child((yyval.node), create_node("Null", NULL));
+                                                                                    insert_child((yyval.node), create_node("Null", NULL, 0, 0));
                                                                                   } if((yyvsp[(5) - (5)].node) != NULL) {
                                                                                     insert_child((yyval.node), (yyvsp[(5) - (5)].node));
                                                                                   } else {
-                                                                                  insert_child((yyval.node), create_node("Null",NULL));
+                                                                                  insert_child((yyval.node), create_node("Null",NULL, 0, 0));
                                                                                   }
                                                                                 }
     break;
 
   case 42:
-#line 259 "uccompiler.y"
+#line 260 "uccompiler.y"
     {
-                                                                                  (yyval.node) = create_node("Return", NULL);
+                                                                                  (yyval.node) = create_node("Return", NULL, (yyvsp[(1) - (3)].token)->line, (yyvsp[(1) - (3)].token)->column);
                                                                                   insert_child((yyval.node), (yyvsp[(2) - (3)].node));
                                                                                 }
     break;
 
   case 43:
-#line 263 "uccompiler.y"
+#line 264 "uccompiler.y"
     {
-                                                                                  (yyval.node) = create_node("Return", NULL); 
-                                                                                  insert_child((yyval.node), create_node("Null", NULL));
+                                                                                  (yyval.node) = create_node("Return", NULL, (yyvsp[(1) - (2)].token)->line, (yyvsp[(1) - (2)].token)->column); 
+                                                                                  insert_child((yyval.node), create_node("Null", NULL, 0, 0));
                                                                                 }
     break;
 
   case 44:
-#line 267 "uccompiler.y"
+#line 268 "uccompiler.y"
     {(yyval.node) = NULL;}
     break;
 
   case 45:
-#line 270 "uccompiler.y"
+#line 271 "uccompiler.y"
     {
                                                                                   if((yyvsp[(1) - (2)].node) != NULL) {
                                                                                     (yyval.node) = (yyvsp[(1) - (2)].node); 
@@ -1976,31 +1977,31 @@ yyreduce:
     break;
 
   case 46:
-#line 278 "uccompiler.y"
+#line 279 "uccompiler.y"
     {(yyval.node) = (yyvsp[(1) - (1)].node);}
     break;
 
   case 47:
-#line 281 "uccompiler.y"
+#line 282 "uccompiler.y"
     {(yyval.node) = (yyvsp[(1) - (1)].node);}
     break;
 
   case 48:
-#line 282 "uccompiler.y"
+#line 283 "uccompiler.y"
     {(yyval.node) = NULL;}
     break;
 
   case 49:
-#line 285 "uccompiler.y"
+#line 286 "uccompiler.y"
     {
-                                                                                  (yyval.node) = create_node("Store", NULL);
+                                                                                  (yyval.node) = create_node("Store", NULL, (yyvsp[(2) - (3)].token)->line, (yyvsp[(2) - (3)].token)->column);
                                                                                   if((yyvsp[(1) - (3)].node) == NULL) {
-                                                                                    insert_child((yyval.node), create_node("Null", NULL));
+                                                                                    insert_child((yyval.node), create_node("Null", NULL, 0, 0));
                                                                                   } else {
                                                                                     insert_child((yyval.node), (yyvsp[(1) - (3)].node));
                                                                                   } 
                                                                                   if((yyvsp[(3) - (3)].node) == NULL) {
-                                                                                    insert_child((yyval.node), create_node("Null", NULL));
+                                                                                    insert_child((yyval.node), create_node("Null", NULL, 0, 0));
                                                                                   } else {
                                                                                     insert_child((yyval.node), (yyvsp[(3) - (3)].node));
                                                                                   }
@@ -2008,16 +2009,16 @@ yyreduce:
     break;
 
   case 50:
-#line 298 "uccompiler.y"
+#line 299 "uccompiler.y"
     {
-                                                                                  (yyval.node) = create_node("Add", NULL); 
+                                                                                  (yyval.node) = create_node("Add", NULL, (yyvsp[(2) - (3)].token)->line, (yyvsp[(2) - (3)].token)->column); 
                                                                                   if((yyvsp[(1) - (3)].node) == NULL) {
-                                                                                    insert_child((yyval.node), create_node("Null", NULL));
+                                                                                    insert_child((yyval.node), create_node("Null", NULL, 0, 0));
                                                                                   } else {
                                                                                     insert_child((yyval.node), (yyvsp[(1) - (3)].node));
                                                                                   } 
                                                                                   if((yyvsp[(3) - (3)].node) == NULL) {
-                                                                                    insert_child((yyval.node), create_node("Null", NULL));
+                                                                                    insert_child((yyval.node), create_node("Null", NULL, 0, 0));
                                                                                   } else {
                                                                                     insert_child((yyval.node), (yyvsp[(3) - (3)].node));
                                                                                   }
@@ -2025,15 +2026,15 @@ yyreduce:
     break;
 
   case 51:
-#line 311 "uccompiler.y"
+#line 312 "uccompiler.y"
     {
-                                                                                  (yyval.node) = create_node("Sub", NULL);
+                                                                                  (yyval.node) = create_node("Sub", NULL, (yyvsp[(2) - (3)].token)->line, (yyvsp[(2) - (3)].token)->column);
                                                                                   if((yyvsp[(1) - (3)].node) == NULL) {
-                                                                                    insert_child((yyval.node), create_node("Null", NULL));
+                                                                                    insert_child((yyval.node), create_node("Null", NULL, 0, 0));
                                                                                   } else {
                                                                                     insert_child((yyval.node), (yyvsp[(1) - (3)].node));
                                                                                   } if((yyvsp[(3) - (3)].node) == NULL) {
-                                                                                    insert_child((yyval.node), create_node("Null", NULL));
+                                                                                    insert_child((yyval.node), create_node("Null", NULL, 0, 0));
                                                                                   } else {
                                                                                     insert_child((yyval.node), (yyvsp[(3) - (3)].node));
                                                                                   }
@@ -2041,15 +2042,15 @@ yyreduce:
     break;
 
   case 52:
-#line 323 "uccompiler.y"
+#line 324 "uccompiler.y"
     {
-                                                                                  (yyval.node) = create_node("Mul", NULL); 
+                                                                                  (yyval.node) = create_node("Mul", NULL, (yyvsp[(2) - (3)].token)->line, (yyvsp[(2) - (3)].token)->column); 
                                                                                   if((yyvsp[(1) - (3)].node) == NULL) {
-                                                                                    insert_child((yyval.node), create_node("Null", NULL));
+                                                                                    insert_child((yyval.node), create_node("Null", NULL, 0, 0));
                                                                                   } else {
                                                                                     insert_child((yyval.node), (yyvsp[(1) - (3)].node));
                                                                                   } if((yyvsp[(3) - (3)].node) == NULL) {
-                                                                                    insert_child((yyval.node), create_node("Null", NULL));
+                                                                                    insert_child((yyval.node), create_node("Null", NULL, 0, 0));
                                                                                   } else {
                                                                                     insert_child((yyval.node), (yyvsp[(3) - (3)].node));
                                                                                   }
@@ -2057,14 +2058,14 @@ yyreduce:
     break;
 
   case 53:
-#line 335 "uccompiler.y"
+#line 336 "uccompiler.y"
     {
-                                                                                  (yyval.node) = create_node("Div", NULL); if((yyvsp[(1) - (3)].node) == NULL) {
-                                                                                    insert_child((yyval.node), create_node("Null", NULL));
+                                                                                  (yyval.node) = create_node("Div", NULL, (yyvsp[(2) - (3)].token)->line, (yyvsp[(2) - (3)].token)->column); if((yyvsp[(1) - (3)].node) == NULL) {
+                                                                                    insert_child((yyval.node), create_node("Null", NULL, 0, 0));
                                                                                   } else {
                                                                                     insert_child((yyval.node), (yyvsp[(1) - (3)].node));
                                                                                   } if((yyvsp[(3) - (3)].node) == NULL) {
-                                                                                    insert_child((yyval.node), create_node("Null", NULL));
+                                                                                    insert_child((yyval.node), create_node("Null", NULL, 0, 0));
                                                                                   } else {
                                                                                     insert_child((yyval.node), (yyvsp[(3) - (3)].node));
                                                                                   }
@@ -2072,14 +2073,14 @@ yyreduce:
     break;
 
   case 54:
-#line 346 "uccompiler.y"
+#line 347 "uccompiler.y"
     {
-                                                                                  (yyval.node) = create_node("Mod", NULL); if((yyvsp[(1) - (3)].node) == NULL) {
-                                                                                    insert_child((yyval.node), create_node("Null", NULL));
+                                                                                  (yyval.node) = create_node("Mod", NULL, (yyvsp[(2) - (3)].token)->line, (yyvsp[(2) - (3)].token)->column); if((yyvsp[(1) - (3)].node) == NULL) {
+                                                                                    insert_child((yyval.node), create_node("Null", NULL, 0, 0));
                                                                                   } else {
                                                                                     insert_child((yyval.node), (yyvsp[(1) - (3)].node));
                                                                                   } if((yyvsp[(3) - (3)].node) == NULL) {
-                                                                                    insert_child((yyval.node), create_node("Null", NULL));
+                                                                                    insert_child((yyval.node), create_node("Null", NULL, 0, 0));
                                                                                   } else {
                                                                                     insert_child((yyval.node), (yyvsp[(3) - (3)].node));
                                                                                   }
@@ -2087,14 +2088,14 @@ yyreduce:
     break;
 
   case 55:
-#line 357 "uccompiler.y"
+#line 358 "uccompiler.y"
     {
-                                                                                  (yyval.node) = create_node("Or", NULL); if((yyvsp[(1) - (3)].node) == NULL) {
-                                                                                    insert_child((yyval.node), create_node("Null", NULL));
+                                                                                  (yyval.node) = create_node("Or", NULL, (yyvsp[(2) - (3)].token)->line, (yyvsp[(2) - (3)].token)->column); if((yyvsp[(1) - (3)].node) == NULL) {
+                                                                                    insert_child((yyval.node), create_node("Null", NULL, 0, 0));
                                                                                   } else {
                                                                                     insert_child((yyval.node), (yyvsp[(1) - (3)].node));
                                                                                   } if((yyvsp[(3) - (3)].node) == NULL) {
-                                                                                    insert_child((yyval.node), create_node("Null", NULL));
+                                                                                    insert_child((yyval.node), create_node("Null", NULL, 0, 0));
                                                                                   } else {
                                                                                     insert_child((yyval.node), (yyvsp[(3) - (3)].node));
                                                                                   }
@@ -2102,14 +2103,14 @@ yyreduce:
     break;
 
   case 56:
-#line 368 "uccompiler.y"
+#line 369 "uccompiler.y"
     {
-                                                                                  (yyval.node) = create_node("And", NULL); if((yyvsp[(1) - (3)].node) == NULL) {
-                                                                                    insert_child((yyval.node), create_node("Null", NULL));
+                                                                                  (yyval.node) = create_node("And", NULL, (yyvsp[(2) - (3)].token)->line, (yyvsp[(2) - (3)].token)->column); if((yyvsp[(1) - (3)].node) == NULL) {
+                                                                                    insert_child((yyval.node), create_node("Null", NULL, 0, 0));
                                                                                   } else {
                                                                                     insert_child((yyval.node), (yyvsp[(1) - (3)].node));
                                                                                   } if((yyvsp[(3) - (3)].node) == NULL) {
-                                                                                    insert_child((yyval.node), create_node("Null", NULL));
+                                                                                    insert_child((yyval.node), create_node("Null", NULL, 0, 0));
                                                                                   } else {
                                                                                     insert_child((yyval.node), (yyvsp[(3) - (3)].node));
                                                                                   }
@@ -2117,14 +2118,14 @@ yyreduce:
     break;
 
   case 57:
-#line 379 "uccompiler.y"
+#line 380 "uccompiler.y"
     {
-                                                                                  (yyval.node) = create_node("BitWiseAnd", NULL); if((yyvsp[(1) - (3)].node) == NULL) {
-                                                                                    insert_child((yyval.node), create_node("Null", NULL));
+                                                                                  (yyval.node) = create_node("BitWiseAnd", NULL, (yyvsp[(2) - (3)].token)->line, (yyvsp[(2) - (3)].token)->column); if((yyvsp[(1) - (3)].node) == NULL) {
+                                                                                    insert_child((yyval.node), create_node("Null", NULL, 0, 0));
                                                                                   } else {
                                                                                     insert_child((yyval.node), (yyvsp[(1) - (3)].node));
                                                                                   } if((yyvsp[(3) - (3)].node) == NULL) {
-                                                                                    insert_child((yyval.node), create_node("Null", NULL));
+                                                                                    insert_child((yyval.node), create_node("Null", NULL, 0, 0));
                                                                                   } else {
                                                                                     insert_child((yyval.node), (yyvsp[(3) - (3)].node));
                                                                                   }
@@ -2132,14 +2133,14 @@ yyreduce:
     break;
 
   case 58:
-#line 390 "uccompiler.y"
+#line 391 "uccompiler.y"
     {
-                                                                                  (yyval.node) = create_node("BitWiseOr", NULL); if((yyvsp[(1) - (3)].node) == NULL) {
-                                                                                    insert_child((yyval.node), create_node("Null", NULL));
+                                                                                  (yyval.node) = create_node("BitWiseOr", NULL, (yyvsp[(2) - (3)].token)->line, (yyvsp[(2) - (3)].token)->column); if((yyvsp[(1) - (3)].node) == NULL) {
+                                                                                    insert_child((yyval.node), create_node("Null", NULL, 0, 0));
                                                                                   } else {
                                                                                     insert_child((yyval.node), (yyvsp[(1) - (3)].node));
                                                                                   } if((yyvsp[(3) - (3)].node) == NULL) {
-                                                                                    insert_child((yyval.node), create_node("Null", NULL));
+                                                                                    insert_child((yyval.node), create_node("Null", NULL, 0, 0));
                                                                                   } else {
                                                                                     insert_child((yyval.node), (yyvsp[(3) - (3)].node));
                                                                                   }
@@ -2147,14 +2148,14 @@ yyreduce:
     break;
 
   case 59:
-#line 401 "uccompiler.y"
+#line 402 "uccompiler.y"
     {
-                                                                                  (yyval.node) = create_node("BitWiseXor", NULL); if((yyvsp[(1) - (3)].node) == NULL) {
-                                                                                    insert_child((yyval.node), create_node("Null", NULL));
+                                                                                  (yyval.node) = create_node("BitWiseXor", NULL, (yyvsp[(2) - (3)].token)->line, (yyvsp[(2) - (3)].token)->column); if((yyvsp[(1) - (3)].node) == NULL) {
+                                                                                    insert_child((yyval.node), create_node("Null", NULL, 0, 0));
                                                                                   } else {
                                                                                     insert_child((yyval.node), (yyvsp[(1) - (3)].node));
                                                                                   } if((yyvsp[(3) - (3)].node) == NULL) {
-                                                                                    insert_child((yyval.node), create_node("Null", NULL));
+                                                                                    insert_child((yyval.node), create_node("Null", NULL, 0, 0));
                                                                                   } else {
                                                                                     insert_child((yyval.node), (yyvsp[(3) - (3)].node));
                                                                                   }
@@ -2162,14 +2163,14 @@ yyreduce:
     break;
 
   case 60:
-#line 412 "uccompiler.y"
+#line 413 "uccompiler.y"
     {
-                                                                                  (yyval.node) = create_node("Eq", NULL); if((yyvsp[(1) - (3)].node) == NULL) {
-                                                                                    insert_child((yyval.node), create_node("Null", NULL));
+                                                                                  (yyval.node) = create_node("Eq", NULL, (yyvsp[(2) - (3)].token)->line, (yyvsp[(2) - (3)].token)->column); if((yyvsp[(1) - (3)].node) == NULL) {
+                                                                                    insert_child((yyval.node), create_node("Null", NULL, 0, 0));
                                                                                   } else {
                                                                                     insert_child((yyval.node), (yyvsp[(1) - (3)].node));
                                                                                   } if((yyvsp[(3) - (3)].node) == NULL) {
-                                                                                    insert_child((yyval.node), create_node("Null", NULL));
+                                                                                    insert_child((yyval.node), create_node("Null", NULL, 0, 0));
                                                                                   } else {
                                                                                     insert_child((yyval.node), (yyvsp[(3) - (3)].node));
                                                                                   }
@@ -2177,14 +2178,14 @@ yyreduce:
     break;
 
   case 61:
-#line 423 "uccompiler.y"
+#line 424 "uccompiler.y"
     {
-                                                                                  (yyval.node) = create_node("Ne", NULL); if((yyvsp[(1) - (3)].node) == NULL) {
-                                                                                    insert_child((yyval.node), create_node("Null", NULL));
+                                                                                  (yyval.node) = create_node("Ne", NULL, (yyvsp[(2) - (3)].token)->line, (yyvsp[(2) - (3)].token)->column); if((yyvsp[(1) - (3)].node) == NULL) {
+                                                                                    insert_child((yyval.node), create_node("Null", NULL, 0, 0));
                                                                                   } else {
                                                                                     insert_child((yyval.node), (yyvsp[(1) - (3)].node));
                                                                                   } if((yyvsp[(3) - (3)].node) == NULL) {
-                                                                                    insert_child((yyval.node), create_node("Null", NULL));
+                                                                                    insert_child((yyval.node), create_node("Null", NULL, 0, 0));
                                                                                   } else {
                                                                                     insert_child((yyval.node), (yyvsp[(3) - (3)].node));
                                                                                   }
@@ -2192,14 +2193,14 @@ yyreduce:
     break;
 
   case 62:
-#line 434 "uccompiler.y"
+#line 435 "uccompiler.y"
     {
-                                                                                  (yyval.node) = create_node("Le", NULL); if((yyvsp[(1) - (3)].node) == NULL) {
-                                                                                    insert_child((yyval.node), create_node("Null", NULL));
+                                                                                  (yyval.node) = create_node("Le", NULL, (yyvsp[(2) - (3)].token)->line, (yyvsp[(2) - (3)].token)->column); if((yyvsp[(1) - (3)].node) == NULL) {
+                                                                                    insert_child((yyval.node), create_node("Null", NULL, 0, 0));
                                                                                   } else {
                                                                                     insert_child((yyval.node), (yyvsp[(1) - (3)].node));
                                                                                   } if((yyvsp[(3) - (3)].node) == NULL) {
-                                                                                    insert_child((yyval.node), create_node("Null", NULL));
+                                                                                    insert_child((yyval.node), create_node("Null", NULL, 0, 0));
                                                                                   } else {
                                                                                     insert_child((yyval.node), (yyvsp[(3) - (3)].node));
                                                                                   }
@@ -2207,14 +2208,14 @@ yyreduce:
     break;
 
   case 63:
-#line 445 "uccompiler.y"
+#line 446 "uccompiler.y"
     {
-                                                                                  (yyval.node) = create_node("Ge", NULL); if((yyvsp[(1) - (3)].node) == NULL) {
-                                                                                    insert_child((yyval.node), create_node("Null", NULL));
+                                                                                  (yyval.node) = create_node("Ge", NULL, (yyvsp[(2) - (3)].token)->line, (yyvsp[(2) - (3)].token)->column); if((yyvsp[(1) - (3)].node) == NULL) {
+                                                                                    insert_child((yyval.node), create_node("Null", NULL, 0, 0));
                                                                                   } else {
                                                                                     insert_child((yyval.node), (yyvsp[(1) - (3)].node));
                                                                                   } if((yyvsp[(3) - (3)].node) == NULL) {
-                                                                                    insert_child((yyval.node), create_node("Null", NULL));
+                                                                                    insert_child((yyval.node), create_node("Null", NULL, 0, 0));
                                                                                   } else {
                                                                                     insert_child((yyval.node), (yyvsp[(3) - (3)].node));
                                                                                   }
@@ -2222,14 +2223,14 @@ yyreduce:
     break;
 
   case 64:
-#line 456 "uccompiler.y"
+#line 457 "uccompiler.y"
     {
-                                                                                  (yyval.node) = create_node("Lt", NULL); if((yyvsp[(1) - (3)].node) == NULL) {
-                                                                                    insert_child((yyval.node), create_node("Null", NULL));
+                                                                                  (yyval.node) = create_node("Lt", NULL, (yyvsp[(2) - (3)].token)->line, (yyvsp[(2) - (3)].token)->column); if((yyvsp[(1) - (3)].node) == NULL) {
+                                                                                    insert_child((yyval.node), create_node("Null", NULL, 0, 0));
                                                                                   } else {
                                                                                     insert_child((yyval.node), (yyvsp[(1) - (3)].node));
                                                                                   } if((yyvsp[(3) - (3)].node) == NULL) {
-                                                                                    insert_child((yyval.node), create_node("Null", NULL));
+                                                                                    insert_child((yyval.node), create_node("Null", NULL, 0, 0));
                                                                                   } else {
                                                                                     insert_child((yyval.node), (yyvsp[(3) - (3)].node));
                                                                                   }
@@ -2237,14 +2238,14 @@ yyreduce:
     break;
 
   case 65:
-#line 467 "uccompiler.y"
+#line 468 "uccompiler.y"
     {
-                                                                                  (yyval.node) = create_node("Gt", NULL); if((yyvsp[(1) - (3)].node) == NULL) {
-                                                                                    insert_child((yyval.node), create_node("Null", NULL));
+                                                                                  (yyval.node) = create_node("Gt", NULL, (yyvsp[(2) - (3)].token)->line, (yyvsp[(2) - (3)].token)->column); if((yyvsp[(1) - (3)].node) == NULL) {
+                                                                                    insert_child((yyval.node), create_node("Null", NULL, 0, 0));
                                                                                   } else {
                                                                                     insert_child((yyval.node), (yyvsp[(1) - (3)].node));
                                                                                   } if((yyvsp[(3) - (3)].node) == NULL) {
-                                                                                    insert_child((yyval.node), create_node("Null", NULL));
+                                                                                    insert_child((yyval.node), create_node("Null", NULL, 0, 0));
                                                                                   } else {
                                                                                     insert_child((yyval.node), (yyvsp[(3) - (3)].node));
                                                                                   }
@@ -2252,11 +2253,11 @@ yyreduce:
     break;
 
   case 66:
-#line 478 "uccompiler.y"
+#line 479 "uccompiler.y"
     {
-                                                                                  (yyval.node) = create_node("Plus", NULL); 
+                                                                                  (yyval.node) = create_node("Plus", NULL, (yyvsp[(1) - (2)].token)->line, (yyvsp[(1) - (2)].token)->column); 
                                                                                   if((yyvsp[(2) - (2)].node) == NULL) {
-                                                                                    insert_child((yyval.node), create_node("Null", NULL));
+                                                                                    insert_child((yyval.node), create_node("Null", NULL, 0, 0));
                                                                                   } else {
                                                                                     insert_child((yyval.node), (yyvsp[(2) - (2)].node));
                                                                                   }
@@ -2264,11 +2265,11 @@ yyreduce:
     break;
 
   case 67:
-#line 486 "uccompiler.y"
+#line 487 "uccompiler.y"
     {
-                                                                                  (yyval.node) = create_node("Minus", NULL);
+                                                                                  (yyval.node) = create_node("Minus", NULL, (yyvsp[(1) - (2)].token)->line, (yyvsp[(1) - (2)].token)->column);
                                                                                   if((yyvsp[(2) - (2)].node) == NULL) {
-                                                                                    insert_child((yyval.node), create_node("Null", NULL));
+                                                                                    insert_child((yyval.node), create_node("Null", NULL, 0, 0));
                                                                                   } else {
                                                                                     insert_child((yyval.node), (yyvsp[(2) - (2)].node));
                                                                                   }
@@ -2276,11 +2277,11 @@ yyreduce:
     break;
 
   case 68:
-#line 494 "uccompiler.y"
+#line 495 "uccompiler.y"
     {
-                                                                                  (yyval.node) = create_node("Not", NULL);
+                                                                                  (yyval.node) = create_node("Not", NULL, (yyvsp[(1) - (2)].token)->line, (yyvsp[(1) - (2)].token)->column);
                                                                                   if((yyvsp[(2) - (2)].node) == NULL) {
-                                                                                    insert_child((yyval.node), create_node("Null", NULL));
+                                                                                    insert_child((yyval.node), create_node("Null", NULL, 0, 0));
                                                                                   } else {
                                                                                     insert_child((yyval.node), (yyvsp[(2) - (2)].node));
                                                                                   }
@@ -2288,10 +2289,10 @@ yyreduce:
     break;
 
   case 69:
-#line 502 "uccompiler.y"
+#line 503 "uccompiler.y"
     {
-                                                                                  (yyval.node) = create_node("Call", NULL); 
-                                                                                  insert_child((yyval.node), create_node("Id", (yyvsp[(1) - (5)].token)->id)); 
+                                                                                  (yyval.node) = create_node("Call", NULL, 0, 0); 
+                                                                                  insert_child((yyval.node), create_node("Id", (yyvsp[(1) - (5)].token)->id, (yyvsp[(1) - (5)].token)->line, (yyvsp[(1) - (5)].token)->column)); 
                                                                                   if((yyvsp[(3) - (5)].node)!=NULL) {
                                                                                     insert_child((yyval.node), (yyvsp[(3) - (5)].node));
                                                                                   } 
@@ -2302,90 +2303,90 @@ yyreduce:
     break;
 
   case 70:
-#line 512 "uccompiler.y"
+#line 513 "uccompiler.y"
     {
-                                                                                  (yyval.node) = create_node("Call", NULL); 
-                                                                                  insert_child((yyval.node), create_node("Id", (yyvsp[(1) - (3)].token)->id));
+                                                                                  (yyval.node) = create_node("Call", NULL, 0, 0); 
+                                                                                  insert_child((yyval.node), create_node("Id", (yyvsp[(1) - (3)].token)->id, (yyvsp[(1) - (3)].token)->line, (yyvsp[(1) - (3)].token)->column));
                                                                                 }
     break;
 
   case 71:
-#line 516 "uccompiler.y"
-    {(yyval.node) = create_node("Id", (yyvsp[(1) - (1)].token)->id);}
+#line 517 "uccompiler.y"
+    {(yyval.node) = create_node("Id", (yyvsp[(1) - (1)].token)->id, (yyvsp[(1) - (1)].token)->line, (yyvsp[(1) - (1)].token)->column);}
     break;
 
   case 72:
-#line 517 "uccompiler.y"
-    {(yyval.node) = create_node("IntLit", (yyvsp[(1) - (1)].token)->id);}
+#line 518 "uccompiler.y"
+    {(yyval.node) = create_node("IntLit", (yyvsp[(1) - (1)].token)->id, (yyvsp[(1) - (1)].token)->line, (yyvsp[(1) - (1)].token)->column);}
     break;
 
   case 73:
-#line 518 "uccompiler.y"
-    {(yyval.node) = create_node("ChrLit", (yyvsp[(1) - (1)].token)->id);}
+#line 519 "uccompiler.y"
+    {(yyval.node) = create_node("ChrLit", (yyvsp[(1) - (1)].token)->id, (yyvsp[(1) - (1)].token)->line, (yyvsp[(1) - (1)].token)->column);}
     break;
 
   case 74:
-#line 519 "uccompiler.y"
-    {(yyval.node) = create_node("RealLit", (yyvsp[(1) - (1)].token)->id);}
+#line 520 "uccompiler.y"
+    {(yyval.node) = create_node("RealLit", (yyvsp[(1) - (1)].token)->id, (yyvsp[(1) - (1)].token)->line, (yyvsp[(1) - (1)].token)->column);}
     break;
 
   case 75:
-#line 520 "uccompiler.y"
+#line 521 "uccompiler.y"
     {(yyval.node) = (yyvsp[(2) - (3)].node);}
     break;
 
   case 76:
-#line 521 "uccompiler.y"
-    {(yyval.node) = NULL;}
-    break;
-
-  case 77:
 #line 522 "uccompiler.y"
     {(yyval.node) = NULL;}
     break;
 
+  case 77:
+#line 523 "uccompiler.y"
+    {(yyval.node) = NULL;}
+    break;
+
   case 78:
-#line 525 "uccompiler.y"
+#line 526 "uccompiler.y"
     {
-                                                                                  (yyval.node) = create_node("Comma", NULL); 
+                                                                                  (yyval.node) = create_node("Comma", NULL, (yyvsp[(2) - (3)].token)->line, (yyvsp[(2) - (3)].token)->column); 
                                                                                   if((yyvsp[(1) - (3)].node) != NULL) {
                                                                                     insert_child((yyval.node), (yyvsp[(1) - (3)].node));
                                                                                   } else {
-                                                                                    insert_child((yyval.node), create_node("Null", NULL));
+                                                                                    insert_child((yyval.node), create_node("Null", NULL, 0, 0));
                                                                                   } if((yyvsp[(3) - (3)].node) != NULL) {
                                                                                     insert_child((yyval.node), (yyvsp[(3) - (3)].node));
                                                                                   } else {
-                                                                                    insert_child((yyval.node), create_node("Null", NULL));
+                                                                                    insert_child((yyval.node), create_node("Null", NULL, 0, 0));
                                                                                   }
                                                                                 }
     break;
 
   case 79:
-#line 537 "uccompiler.y"
+#line 538 "uccompiler.y"
     {(yyval.node) = (yyvsp[(1) - (1)].node);}
     break;
 
   case 80:
-#line 540 "uccompiler.y"
+#line 541 "uccompiler.y"
     {
                                                                                   if((yyvsp[(1) - (3)].node) != NULL) {
                                                                                     (yyval.node) = (yyvsp[(1) - (3)].node); insert_brother((yyval.node), (yyvsp[(3) - (3)].node));
                                                                                   } else if((yyvsp[(3) - (3)].node) != NULL) {
                                                                                     (yyval.node) = (yyvsp[(3) - (3)].node);
                                                                                   } else {
-                                                                                    (yyval.node) = create_node("Null", NULL);
+                                                                                    (yyval.node) = create_node("Null", NULL, 0, 0);
                                                                                   }
                                                                                 }
     break;
 
   case 81:
-#line 549 "uccompiler.y"
+#line 550 "uccompiler.y"
     {(yyval.node) = NULL;}
     break;
 
 
 /* Line 1267 of yacc.c.  */
-#line 2389 "y.tab.c"
+#line 2390 "y.tab.c"
       default: break;
     }
   YY_SYMBOL_PRINT ("-> $$ =", yyr1[yyn], &yyval, &yyloc);
@@ -2599,5 +2600,5 @@ yyreturn:
 }
 
 
-#line 552 "uccompiler.y"
+#line 553 "uccompiler.y"
 

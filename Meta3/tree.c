@@ -10,7 +10,7 @@ Node* create_node(char* token, char* value, int line, int col){ /* Creates n0d3 
     tmp->brother = NULL; 
     tmp->token = strdup(token);
     tmp->line = line;
-    tmp->col = col;
+    tmp->column = col;
     tmp->param = NULL;
     tmp->type = NULL;
     tmp->function = 0;
@@ -48,7 +48,7 @@ void insert_first_child(Node *node, Node *child_node) { /* child_node = typespec
     }
     while(uncle != NULL){ /* Goes through cousins to add type spec */
         tmp = uncle->child;
-        uncle->child = create_node(child_node->token, NULL, child_node->line, child_node->col);
+        uncle->child = create_node(child_node->token, NULL, child_node->line, child_node->column);
         uncle->child->brother = tmp;
         if(uncle->brother == NULL)
             break;

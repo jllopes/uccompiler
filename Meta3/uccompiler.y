@@ -185,19 +185,19 @@ DeclarationAux: DeclarationAux COMMA Declarator                                 
               |                                                                 {$$ = NULL;}
 ;
 
-TypeSpec: CHAR                                                                  {$$ = create_node("Char", NULL, $1->line, $1->col);}
-        | INT                                                                   {$$ = create_node("Int", NULL, $1->line, $1->col);}
-        | VOID                                                                  {$$ = create_node("Void", NULL, $1->line, $1->col);}
-        | SHORT                                                                 {$$ = create_node("Short", NULL, $1->line, $1->col);}
-        | DOUBLE                                                                {$$ = create_node("Double", NULL, $1->line, $1->col);}
+TypeSpec: CHAR                                                                  {$$ = create_node("Char", NULL, $1->line, $1->column);}
+        | INT                                                                   {$$ = create_node("Int", NULL, $1->line, $1->column);}
+        | VOID                                                                  {$$ = create_node("Void", NULL, $1->line, $1->column);}
+        | SHORT                                                                 {$$ = create_node("Short", NULL, $1->line, $1->column);}
+        | DOUBLE                                                                {$$ = create_node("Double", NULL, $1->line, $1->column);}
 ;
 
 Declarator: ID ASSIGN ExpressionAux                                             {
-                                                                                  $$ = create_node("Declaration", NULL); 
+                                                                                  $$ = create_node("Declaration", NULL, 0, 0); 
                                                                                   insert_child($$,create_node("Id", $1->id, $1->line, $1->column)); 
                                                                                   insert_child($$, $3);}
           | ID                                                                  {
-                                                                                  $$ = create_node("Declaration", NULL); 
+                                                                                  $$ = create_node("Declaration", NULL, 0, 0); 
                                                                                   insert_child($$, create_node("Id", $1->id, $1->line, $1->column));
                                                                                 }
 ;
