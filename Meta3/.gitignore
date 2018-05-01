@@ -11,4 +11,4 @@ uccompiler
 # Zip
 uccompiler.zip
 # Tests
-tests/*
+tests/
