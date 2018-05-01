@@ -56,9 +56,16 @@ void insert_symbol(Symbol_Table *table, Symbol *symbol) {
         table->symbol = symbol;
     } else {
         aux = table->symbol;
-        while (aux->next != NULL){ /* Goes through all the symbols */
+        //printf("inserting: %s\n", symbol->name);
+        while (aux != NULL){ /* Goes through all the symbols */
+        	//printf("found: %s\n", aux->name);
+        	if(strcmp(symbol->name, aux->name) == 0){
+        		return;
+        	}
+        	if(aux->next == NULL)
+        		break;
             aux = aux->next;
-        }
+        }	
         aux->next=symbol;
 		aux->next->next = NULL;
     }
@@ -284,7 +291,6 @@ void parse_func_definition(Node *node, Symbol_Table *global){
 				symbol_sec_aux->type = strdup(lower_case(node_sec_aux->child->token));
 				symbol_sec_aux->is_param = 1;
 				insert_symbol(table_aux, symbol_sec_aux);
-				//printf("inserted: name:%s type:%s\n", symbol_sec_aux->name, symbol_sec_aux->type);
 			}
 			node_sec_aux = node_sec_aux->brother;
 		}
