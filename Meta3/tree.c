@@ -3,12 +3,14 @@
 #include <string.h>
 #include "tree.h"
 
-Node* create_node(char* token, char* value){ /* Creates n0d3 */
+Node* create_node(char* token, char* value, int line, int col){ /* Creates n0d3 */
     //printf("start create node\n");
     Node* tmp = (Node*) malloc(sizeof(Node));
     tmp->child = NULL; 
     tmp->brother = NULL; 
     tmp->token = strdup(token);
+    tmp->line = line;
+    tmp->col = col;
     tmp->param = NULL;
     tmp->type = NULL;
     tmp->function = 0;
@@ -30,7 +32,7 @@ Token* create_token(int line, int column, char *id){ /* Create token to return f
 }
 
 void insert_first_child(Node *node, Node *child_node) { /* child_node = typespec */
-    //printf("start insert first child\n");
+    
     if(child_node == NULL) /* If node to insert is null end function */
         return;
 
@@ -46,13 +48,13 @@ void insert_first_child(Node *node, Node *child_node) { /* child_node = typespec
     }
     while(uncle != NULL){ /* Goes through cousins to add type spec */
         tmp = uncle->child;
-        uncle->child = create_node(child_node->token, NULL);
+        uncle->child = create_node(child_node->token, NULL, child_node->line, child_node->col);
         uncle->child->brother = tmp;
         if(uncle->brother == NULL)
             break;
         uncle = uncle->brother;
     }
-    //printf("end insert first child\n");
+    
 }
 
 Node* insert_child(Node *node, Node *child_node) {

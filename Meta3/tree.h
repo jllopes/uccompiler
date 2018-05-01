@@ -11,6 +11,8 @@ struct Node{
     Param *param;
     char *type;
     int function;
+    int line;
+    int column;
     Node *child;
     Node *brother;
 };
@@ -28,7 +30,7 @@ struct Param{
 };
 
 Node* root;
-Node* create_node(char* token, char* value);
+Node* create_node(char* token, char* value, int line, int col);
 Token* create_token(int line, int column, char *id); /* Create token to return from lex */
 void insert_first_child(Node *node, Node *child_node);
 Node* insert_child(Node *node, Node *child_node);

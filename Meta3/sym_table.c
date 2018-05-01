@@ -163,7 +163,7 @@ void parse_func_declaration(Node *node, Symbol_Table *global){
 	char *name = strdup(node_aux->brother->value);
 	Symbol *symbol_aux = (Symbol*)malloc(sizeof(Symbol));
 	symbol_aux = global->symbol;
-	//printf("before first while\n");
+	
 	while(symbol_aux != NULL) { // Goes through global symbol table to see if function was already declared
 		if(strcmp(name, symbol_aux->name) == 0){ // Was already declared
 			return;
@@ -172,30 +172,30 @@ void parse_func_declaration(Node *node, Symbol_Table *global){
 			break;
 		symbol_aux = symbol_aux->next;
 	}
-	//printf("after first while\n");
+	
 	symbol_aux = create_symbol(name, type);
-	//printf("after create symbol\n");
+	
 	table_aux = create_table(1, name); // Create symbol table for current function
-	//printf("after create table\n");
+	
 	add_return(table_aux, type);
-	//printf("before second while\n");
+	
 	while(global_aux->next != NULL){ // Adds table to global table brothers
 		global_aux = global_aux->next;
 	}
 	//printf("after second while\n");
 	global_aux->next = table_aux;
 	table_aux->definition = 0;
-	//printf("before third while\n");
+	
 	while(strcmp(node_aux->token, "ParamList") != 0){ // Skips type and name
 		node_aux = node_aux->brother;
 	}
-	//printf("after third while\n");
+	
 	if(node_aux == NULL){
 		return;
 	}
 	node_aux = node_aux->child; // Skip ParamList
 	symbol_aux = create_symbol(name, type);
-	//printf("before param while\n");
+	
 	while(node_aux != NULL){ // Check if there are more ParamDeclaration
 		if(node_aux->child->brother != NULL){ // Checks if param has id
 			Symbol *symbol_sec_aux = (Symbol*) malloc(sizeof(Symbol));
@@ -211,7 +211,7 @@ void parse_func_declaration(Node *node, Symbol_Table *global){
 			break;
 		node_aux = node_aux->brother;
 	}	
-	//printf("after param while\n");
+	
 	insert_symbol(global, symbol_aux); // Add function to global symbol table
 }
 
@@ -308,6 +308,7 @@ void parse_declaration(Node *node, Symbol_Table *table, int recursive){
 	while(symbol_sec_aux != NULL) { // Goes through symbol table to see if variable was already declared
 		if(strcmp(node_aux->child->brother->value, symbol_sec_aux->name) == 0){ // Was already declared
 			/* Symbol <token> already defined */ // SEMANTIC
+			
 			return;
 		}
 		symbol_sec_aux = symbol_sec_aux->next;
