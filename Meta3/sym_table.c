@@ -24,7 +24,7 @@ Param* insert_param(Symbol *sym, char *name, char *type){
 	} else {
 		param->name = NULL;
 	}
-	param->type = lower_case(type);
+	param->type = strdup(lower_case(type));
 	param->next = NULL;
 	if(sym->param == NULL){
 		sym->param = param;
@@ -41,7 +41,7 @@ Param* insert_param(Symbol *sym, char *name, char *type){
 Symbol* create_symbol(char *name, char *type){
 	Symbol *sym = (Symbol*) malloc(sizeof(Symbol));
 	sym->name = strdup(name);
-	sym->type = lower_case(type);
+	sym->type = strdup(lower_case(type));
 	sym->param = NULL;
 	sym->is_param = 0;
 	sym->next = NULL;
@@ -163,7 +163,7 @@ void parse_func_declaration(Node *node, Symbol_Table *global){
 	char *name = strdup(node_aux->brother->value);
 	Symbol *symbol_aux = (Symbol*)malloc(sizeof(Symbol));
 	symbol_aux = global->symbol;
-	
+	//printf("before first while\n");
 	while(symbol_aux != NULL) { // Goes through global symbol table to see if function was already declared
 		if(strcmp(name, symbol_aux->name) == 0){ // Was already declared
 			return;
@@ -172,36 +172,36 @@ void parse_func_declaration(Node *node, Symbol_Table *global){
 			break;
 		symbol_aux = symbol_aux->next;
 	}
-	
+	//printf("after first while\n");
 	symbol_aux = create_symbol(name, type);
-	
+	//printf("after create symbol\n");
 	table_aux = create_table(1, name); // Create symbol table for current function
-	
+	//printf("after create table\n");
 	add_return(table_aux, type);
-	
+	//printf("before second while\n");
 	while(global_aux->next != NULL){ // Adds table to global table brothers
 		global_aux = global_aux->next;
 	}
 	//printf("after second while\n");
 	global_aux->next = table_aux;
 	table_aux->definition = 0;
-	
+	//printf("before third while\n");
 	while(strcmp(node_aux->token, "ParamList") != 0){ // Skips type and name
 		node_aux = node_aux->brother;
 	}
-	
+	//printf("after third while\n");
 	if(node_aux == NULL){
 		return;
 	}
 	node_aux = node_aux->child; // Skip ParamList
 	symbol_aux = create_symbol(name, type);
-	
+	//printf("before param while\n");
 	while(node_aux != NULL){ // Check if there are more ParamDeclaration
 		if(node_aux->child->brother != NULL){ // Checks if param has id
 			Symbol *symbol_sec_aux = (Symbol*) malloc(sizeof(Symbol));
 			insert_param(symbol_aux, node_aux->child->brother->value, node_aux->child->token);
-			symbol_sec_aux->name = lower_case(node_aux->child->brother->value);
-			symbol_sec_aux->type = lower_case(node_aux->child->token);
+			symbol_sec_aux->name = strdup(node_aux->child->brother->value);
+			symbol_sec_aux->type = strdup(lower_case(node_aux->child->token));
 			symbol_sec_aux->is_param = 1;
 			insert_symbol(table_aux, symbol_sec_aux);
 		} else {
@@ -211,12 +211,12 @@ void parse_func_declaration(Node *node, Symbol_Table *global){
 			break;
 		node_aux = node_aux->brother;
 	}	
-	
+	//printf("after param while\n");
 	insert_symbol(global, symbol_aux); // Add function to global symbol table
 }
 
 void parse_func_definition(Node *node, Symbol_Table *global){
-	Symbol_Table *table_aux, *global_aux = global->next;
+	Symbol_Table *table_aux = (Symbol_Table*)malloc(sizeof(Symbol_Table)), *global_aux = global->next;
 	Node *node_aux = node->child; // First child of FuncDefinition
 	Node *node_sec_aux;
 	char *type = strdup(node_aux->token); // Return type
@@ -255,12 +255,36 @@ void parse_func_definition(Node *node, Symbol_Table *global){
 			if(node_sec_aux->child->brother != NULL){ // Checks if param has id
 				insert_param(symbol_aux, node_sec_aux->child->brother->value, node_sec_aux->child->token);
 				symbol_sec_aux = (Symbol*) malloc(sizeof(Symbol));
-				symbol_sec_aux->name = lower_case(node_sec_aux->child->brother->value);
-				symbol_sec_aux->type = lower_case(node_sec_aux->child->token);
+				symbol_sec_aux->name = strdup(node_sec_aux->child->brother->value);
+				symbol_sec_aux->type = strdup(lower_case(node_sec_aux->child->token));
 				symbol_sec_aux->is_param = 1;
 				insert_symbol(table_aux, symbol_sec_aux);
 			} else {
 				insert_param(symbol_aux, NULL, node_sec_aux->child->token);
+			}
+			node_sec_aux = node_sec_aux->brother;
+		}
+	} else {
+		global_aux = global->next; // Skips global table
+		while(global_aux != NULL){
+			if(strcmp(name, global_aux->name) == 0) {
+				table_aux = global_aux;
+			}
+			global_aux = global_aux->next;
+		}
+		while(strcmp(node_aux->token, "ParamList") != 0){
+			node_aux = node_aux->brother;
+		}
+		table_aux->symbol->next = NULL;
+		node_sec_aux = node_aux->child;
+		while(node_sec_aux != NULL){
+			if(node_sec_aux->child->brother != NULL){
+				symbol_sec_aux = (Symbol*) malloc(sizeof(Symbol));
+				symbol_sec_aux->name = strdup(node_sec_aux->child->brother->value);
+				symbol_sec_aux->type = strdup(lower_case(node_sec_aux->child->token));
+				symbol_sec_aux->is_param = 1;
+				insert_symbol(table_aux, symbol_sec_aux);
+				//printf("inserted: name:%s type:%s\n", symbol_sec_aux->name, symbol_sec_aux->type);
 			}
 			node_sec_aux = node_sec_aux->brother;
 		}
@@ -269,23 +293,24 @@ void parse_func_definition(Node *node, Symbol_Table *global){
 	while(strcmp(node_aux->token, "FuncBody") != 0){
 		node_aux = node_aux->brother;
 	}
-	if(node_aux->child != NULL){
-		node_sec_aux = node_aux->child; // Skips FuncBody
-	}
+	node_sec_aux = node_aux->child; // Skips FuncBody
 	/*while(node_sec_aux != NULL){ // Goes through FuncBody children
 		if(strcmp(node_sec_aux->token, "Declaration") == 0){ // Found Declaration
 			parse_declaration(node_sec_aux, table_aux, 1);
 		}
 		node_sec_aux = node_sec_aux->brother;
 	}*/
-	find_declaration(node_sec_aux, table_aux); // Finds declarations inside of ifs and whiles
+	if(node_sec_aux != NULL){
+		find_declaration(node_sec_aux, table_aux); // Finds declarations inside of ifs and whiles
+	}
 	annotated_tree(node_aux, table_aux, global);
 }
 
 void find_declaration(Node *node, Symbol_Table *local){
 	Node *node_aux = node;
+	//printf("%s\n", node_aux->token);
 	while(node_aux != NULL){ // Goes through FuncBody children
-		if(strcmp(node_aux->token, "Declaration") == 0){ // Found declaration SIGSEGV
+		if(strcmp(node_aux->token, "Declaration") == 0){ // Found declaration (SIGSEGV??)
 			parse_declaration(node_aux, local, 1);
 		} else if(node_aux->child != NULL){ // Found condition
 			find_declaration(node_aux->child, local); // Recursive call
@@ -297,7 +322,7 @@ void find_declaration(Node *node, Symbol_Table *local){
 void add_return(Symbol_Table *table, char *type){
 	Symbol *symbol_aux = (Symbol*) malloc(sizeof(Symbol));
 	symbol_aux->name = strdup("return");
-	symbol_aux->type = lower_case(type);
+	symbol_aux->type = strdup(lower_case(type));
 	insert_symbol(table, symbol_aux); // Add return to function
 }
 
@@ -308,12 +333,12 @@ void parse_declaration(Node *node, Symbol_Table *table, int recursive){
 	while(symbol_sec_aux != NULL) { // Goes through symbol table to see if variable was already declared
 		if(strcmp(node_aux->child->brother->value, symbol_sec_aux->name) == 0){ // Was already declared
 			/* Symbol <token> already defined */ // SEMANTIC
-			
+			//printf("Line: %d, col: %d: Symbol %s already defined\n", node_aux->child->brother->line, node_aux->child->brother->column);
 			return;
 		}
 		symbol_sec_aux = symbol_sec_aux->next;
 	}
-	symbol_aux->type = lower_case(node_aux->child->token); // Type
+	symbol_aux->type = strdup(lower_case(node_aux->child->token)); // Type
 	symbol_aux->name = strdup(node_aux->child->brother->value); // Name [Id(x) -> x = name = value]
 	symbol_aux->param = NULL;
 	symbol_aux->is_param = 0;
@@ -334,13 +359,14 @@ char *lower_case(char *str){
 
 void annotated_tree(Node *root, Symbol_Table *local, Symbol_Table *global) {
     Node *node = root;
+    //printf("Token:%s, Value:%s\n", node->token, node->value);
     while(node != NULL) {
 		int result = add_type(node, local, global);
         if(result == -1 && node->child != NULL) {
             annotated_tree(node->child, local, global);
         }
-		if(node->brother != NULL)
-			break;
+        if(node->brother == NULL)
+        	break;
 		node = node->brother;
     }
 }
@@ -352,9 +378,8 @@ int add_type(Node *node, Symbol_Table *local, Symbol_Table *global) {
 		return 1;
     } else if(strcmp(node->token, "Id") == 0){ // Id
 		char *aux = add_id_type(node, local, global);
-		if(aux == NULL){
+		if(aux == NULL)
 			return -1;
-		}
 		node->type = strdup(aux);
 		return 1;
     } else if(strcmp(node->token, "Call") == 0){ // Call
@@ -367,14 +392,16 @@ int add_type(Node *node, Symbol_Table *local, Symbol_Table *global) {
 		add_literal_type(node, local, global);
 		return 1;
     } else if(strcmp(node->token, "Store") == 0 || strcmp(node->token, "Comma") == 0 || strcmp(node->token, "Mul") == 0 || strcmp(node->token, "Div") == 0 || strcmp(node->token, "Mod") == 0  || strcmp(node->token, "Add") == 0 || strcmp(node->token, "Sub") == 0 ){ // Expr
+		/*if(strcmp(node->child->token, "Id") != 0){
+			printf("Line: %d, col: %d: Lvalue required\n", node->child->line, node->child->column);
+		}*/
 		add_type(node->child, local, global);
         add_type(node->child->brother, local, global);
 		char *aux = type_compare(node->child->type, node->child->brother->type, node->token);
-		if(aux != NULL){
-			node->type = strdup(aux);
-			return 1;
-		}
-		return -1;
+		if(aux == NULL)
+			return -1;
+		node->type = strdup(aux);
+		return 1;
     } else if(strcmp(node->token, "Declaration") == 0) {
 		add_declaration_types(node, local, global);
 		return 1;
@@ -385,7 +412,7 @@ int add_type(Node *node, Symbol_Table *local, Symbol_Table *global) {
 void add_unary_type(Node *node, Symbol_Table *local, Symbol_Table *global) {
     add_type(node->child, local, global);
 	node->type = strdup("int");
-	/*Operator <node->token> cannot be applied to type <node->child->type>*/ // SEMANTIC
+	/*Operator <node->token> cannot be applied to type <node->child->type>*/ // SEMANTICf
 }
 
 void add_comparison_type(Node *node, Symbol_Table *local, Symbol_Table *global) { // Comparison always has 2 children
@@ -438,10 +465,10 @@ void add_call_type(Node *node, Symbol_Table *local, Symbol_Table *global){
     }
 	add_type(node->child, local, global); // Find type of function
 	/*if(node->child->function == 0){ // SEMANTIC
-		printf("Symbol %s is not a function\n", node->child->value);
+		printf("Line: %d, col: %d: Symbol %s is not a function\n", node->child->line, node->child->column, node->child->value);
 	}
 	if(gotten_params != expected_params){
-		printf("Wrong number of arguments to function %s (got %d, required %d)\n", node->child->value, gotten_params, expected_params);
+		printf("Line: %d, col: %d: Wrong number of arguments to function %s (got %d, required %d)\n", node->child->line, node->child->column, node->child->value, gotten_params, expected_params);
 	}*/
     char *function_type = add_id_type(node->child, local, global);
     node->type = strdup(function_type);
@@ -491,7 +518,7 @@ void add_literal_type(Node *node, Symbol_Table *local, Symbol_Table *global) {
 
 void add_declaration_types(Node *node, Symbol_Table *local, Symbol_Table *global) { // Only adds type to third child
 	/* if(strcmp(node->child->token, "Void") == 0){ // SEMANTIC
-		Invalid use of void type in declaration
+		printf("Line: %d, col: %d: Invalid use of void type in declaration\n", node->child->line, node->child->column);
 	}*/
 	if(node->child->brother->brother != NULL){
 		add_type(node->child->brother->brother, local, global);
@@ -504,9 +531,11 @@ char* type_compare(char *ftype, char *stype, char *token) {
 	} else if(ftype != NULL && stype == NULL){
 		return ftype;
 	} else if(ftype == NULL && stype == NULL){
-		return "int";
-	} else{
-		if(strcmp(token, "Add") == 0 || strcmp(token, "Sub") == 0 || strcmp(token, "Mul") == 0 || strcmp(token, "Div") == 0 || strcmp(token, "Mod") == 0){
+		return "undef";
+	} else if(strcmp(ftype, "undef") == 0 || strcmp(stype, "undef") == 0){
+		return "undef";
+	}else{
+		if(strcmp(token, "Add") == 0 || strcmp(token, "Sub") == 0 || strcmp(token, "Mul") == 0 || strcmp(token, "Div") == 0){
 			if(strcmp(ftype, "int") == 0 ) {
 				if(strcmp(stype, "int") == 0 || strcmp(stype, "char") == 0) { // int * char, int * int
 					return "int";
@@ -518,8 +547,15 @@ char* type_compare(char *ftype, char *stype, char *token) {
 					return "double";
 				}
 			}
-			return "int";
-		} else if(strcmp(token, "Comma") == 0) {
+			return "undef";
+		} else if(strcmp(token, "Mod") == 0){
+			if(strcmp(ftype, "int") == 0 || strcmp(ftype, "short") == 0){
+				if(strcmp(stype, "int") == 0 || strcmp(stype, "short") == 0){
+					return "int";
+				}
+			}
+			return "undef";
+		}else if(strcmp(token, "Comma") == 0) {
 			return stype;
 		} else if(strcmp(token, "Store") == 0) {
 			return ftype;
