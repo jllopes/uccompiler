@@ -30,7 +30,9 @@ Param* insert_param(Symbol *sym, char *name, char *type){
 		sym->param = param;
 	} else {
 		aux = sym->param;
-		while(aux->next != NULL){
+		while(aux != NULL){
+			if(aux->next == NULL)
+				break;
 			aux = aux->next;
 		}
 		aux->next = param; 
