@@ -174,6 +174,8 @@ void parse_func_declaration(Node *node, Symbol_Table *global){
 	symbol_aux = global->symbol; // Finds first symbol on global table (never null because of default functions)
 	while(symbol_aux != NULL) { // Goes through global symbol table to see if function was already declared
 		if(strcmp(name, symbol_aux->name) == 0){ // Was already declared
+			//SEMANTIC Symbol <Token> already defined
+			printf("Line %d, col %d: Symbol %s already defined\n", node_aux->line, node_aux->column, node_aux->token);s
 			return;
 		}
 		if(symbol_aux->next == NULL)
@@ -228,6 +230,7 @@ void parse_func_definition(Node *node, Symbol_Table *global){
 			declared = 1; // To check if there is a need to create local table
 			table_aux = global_aux;
 			if(global_aux->definition == 1){ // Was already defined, prevents duplicated definitions
+			//SEMANTIC Symbol <Token> already defined
 				return;
 			}
 		}
@@ -512,9 +515,9 @@ void add_literal_type(Node *node, Symbol_Table *local, Symbol_Table *global) {
 }
 
 void add_declaration_types(Node *node, Symbol_Table *local, Symbol_Table *global) { // Only adds type to third child
-	/* if(strcmp(node->child->token, "Void") == 0){ // SEMANTIC
+	if(strcmp(node->child->token, "Void") == 0){ // SEMANTIC
 		printf("Line %d, col %d: Invalid use of void type in declaration\n", node->child->line, node->child->column);
-	} */
+	} 
 	if(node->child->brother->brother != NULL){
 		add_type(node->child->brother->brother, local, global);
 	}
