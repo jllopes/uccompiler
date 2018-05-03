@@ -230,12 +230,13 @@ void parse_func_definition(Node *node, Symbol_Table *global){
 			declared = 1; // To check if there is a need to create local table
 			table_aux = global_aux;
 			if(global_aux->definition == 1){ // Was already defined, prevents duplicated definitions
-			//SEMANTIC Symbol <Token> already defined
+				//SEMANTIC Symbol <Token> already defined
 				return;
 			}
 		}
 		global_aux = global_aux->next;
 	}
+	
 	global_aux = global;
 	if(declared == 0){ // Function hasn't been declared yet
 		table_aux = create_table(1, name); // Create symbol table for current function
@@ -267,6 +268,7 @@ void parse_func_definition(Node *node, Symbol_Table *global){
 			node_sec_aux = node_sec_aux->brother;
 		}
 	} else {
+		printf("Function already declared!\n");
 		global_aux = global->next; // Skips global table
 		while(global_aux != NULL){
 			if(strcmp(name, global_aux->name) == 0) {
@@ -277,18 +279,54 @@ void parse_func_definition(Node *node, Symbol_Table *global){
 		while(strcmp(node_aux->token, "ParamList") != 0){
 			node_aux = node_aux->brother;
 		}
-		table_aux->symbol->next = NULL;
+
+		Symbol *symbol_aux_prev = table_aux->symbol;
+		Symbol *symbol_aux = table_aux->symbol->next;
+		int gotten_params = 0;
+		int expected_params = 0;
 		node_sec_aux = node_aux->child; // Skip ParamList
-		while(node_sec_aux != NULL){
-			if(node_sec_aux->child->brother != NULL){ // Param has id, is added to local table
+		while(node_sec_aux != NULL || symbol_aux != NULL){
+			
+			if(symbol_aux != NULL)
+				expected_params++;
+			if(node_sec_aux != NULL && node_sec_aux->child->brother != NULL){ // Param has id, is added to local table
+				printf("Entra aqui!\n");
+				gotten_params++;
+				if(symbol_aux == NULL)
+					break;
+				
+				if(strcmp(lower_case(node_sec_aux->child->token), symbol_aux->type) != 0){
+					printf("Line %d, col %d: Conflicting types (got %s, expected %s)\n", node_sec_aux->child->line, node_sec_aux->child->column, lower_case(node_sec_aux->child->token), symbol_aux->type);
+					return;
+				}
 				symbol_sec_aux = (Symbol*) malloc(sizeof(Symbol));
 				symbol_sec_aux->name = strdup(node_sec_aux->child->brother->value);
 				symbol_sec_aux->type = strdup(lower_case(node_sec_aux->child->token));
 				symbol_sec_aux->is_param = 1;
-				insert_symbol(table_aux, symbol_sec_aux);
+				replace_symbol(symbol_aux, symbol_sec_aux);
+			}else if(node_sec_aux != NULL){
+				printf("Ou Entra aqui!\n");
+				gotten_params++;
+				if(symbol_aux == NULL)
+					break;
+				
+				if(strcmp(lower_case(node_sec_aux->child->token), symbol_aux->type) != 0){
+					printf("Line %d, col %d: Conflicting types (got %s, expected %s)\n", node_sec_aux->child->line, node_sec_aux->child->column, lower_case(node_sec_aux->child->token), symbol_aux->type);
+					return;
+				}
 			}
+			
+			symbol_aux_prev = symbol_aux;
+			symbol_aux = symbol_aux->next;
 			node_sec_aux = node_sec_aux->brother;
-		}	
+		}
+
+		if(gotten_params != expected_params){
+			printf("Line %d, col %d: Wrong number of arguments to function %s (got %d, required %d)\n", node_sec_aux->child->line, node_sec_aux->child->column, name, gotten_params, expected_params);
+		}
+
+
+
 	}
 	table_aux->definition = 1;
 	while(strcmp(node_aux->token, "FuncBody") != 0){
@@ -305,6 +343,14 @@ void parse_func_definition(Node *node, Symbol_Table *global){
 		find_declaration(node_sec_aux, table_aux); // Finds declarations inside of ifs and whiles
 	}
 	annotated_tree(node_sec_aux, table_aux, global);
+}
+
+
+void replace_symbol(Symbol *from_symbol, Symbol *to_symbol){
+	if(from_symbol == NULL  || to_symbol == NULL)
+		return;
+	to_symbol->next = from_symbol->next;
+	from_symbol->next = to_symbol;
 }
 
 void find_declaration(Node *node, Symbol_Table *local){

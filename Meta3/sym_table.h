@@ -48,4 +48,5 @@ void add_literal_type(Node *node, Symbol_Table *local, Symbol_Table *global);
 void add_declaration_types(Node *node, Symbol_Table *local, Symbol_Table *global);
 void add_func_types(Node *node, Symbol_Table *global);
 char* type_compare(char *ftype, char *stype, char *token);
+void replace_symbol(Symbol *from_symbol, Symbol *to_symbol);
 #endif //SYMBOL_TABLE_H
