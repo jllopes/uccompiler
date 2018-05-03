@@ -436,7 +436,11 @@ void add_func_types(Node *node, Symbol_Table *global){
 
 void add_unary_type(Node *node, Symbol_Table *local, Symbol_Table *global) {
     add_type(node->child, local, global);
-	node->type = strdup("int");
+    /*if(strcmp(node->child->type, "undef") == 0){
+    	node->type = strdup("undef");
+    	return;
+    }*/
+	node->type = strdup(node->child->type);
 	/* if(node->child != NULL && !strcmp(node->child->type, "undef"))
 		printf("Line %d, col %d: Operator %s cannot be applied to type %s\n", node->child->line, node->child->column, node->token, node->child->type); */
 	
@@ -491,8 +495,8 @@ void add_call_type(Node *node, Symbol_Table *local, Symbol_Table *global){
 	} else if(gotten_params != expected_params){
 		printf("Line %d, col %d: Wrong number of arguments to function %s (got %d, required %d)\n", node->child->line, (int)((node->child->column)-strlen(node->child->value)), node->child->value, gotten_params, expected_params);
 	} */
-    /* char *function_type = add_id_type(node->child, local, global); */
-    /* node->type = strdup(function_type); */
+    char *function_type = add_id_type(node->child, local, global); 
+    node->type = strdup(function_type); 
 }
 
 char* add_id_type(Node *node, Symbol_Table *local, Symbol_Table *global) { // Finds type of x in Id(x)
@@ -557,25 +561,40 @@ char* type_compare(char *ftype, char *stype, char *token) {
 		return "undef";
 	}else{
 		if(strcmp(token, "Add") == 0 || strcmp(token, "Sub") == 0 || strcmp(token, "Mul") == 0 || strcmp(token, "Div") == 0){
-			if(strcmp(ftype, "int") == 0 ) {
-				if(strcmp(stype, "int") == 0 || strcmp(stype, "char") == 0) { // int * char, int * int
+			if(strcmp(ftype, stype) == 0){
+				return ftype;
+			}
+			if(strcmp(ftype, "int") == 0) {
+				if(strcmp(stype, "short") == 0 || strcmp(stype, "char") == 0) { // int * char, int * int
 					return "int";
 				} else if(strcmp(stype, "double") == 0){ // int * double
 					return "double";
 				}
 			} else if(strcmp(ftype, "double") == 0) {
-				if(strcmp(stype, "double") == 0|| strcmp(stype,"char") == 0|| strcmp(stype,"int") == 0) { // double * double, double * int, double * char
+				if(strcmp(stype, "double") == 0|| strcmp(stype,"char") == 0|| strcmp(stype,"int") == 0 || strcmp(stype, "short") == 0) { // double * double, double * int, double * char
 					return "double";
+				}
+			} else if(strcmp(ftype, "char") == 0){
+				if(strcmp(stype, "short") == 0){
+					return "short";
+				} else if(strcmp(stype, "double") == 0){
+					return "double";
+				} else if(strcmp(stype, "int") == 0){
+					return "int";
+				}
+
+			} else if(strcmp(ftype, "short") == 0){
+				if(strcmp(stype, "int") == 0) { // int * char, int * int
+					return "int";
+				} else if(strcmp(stype, "double") == 0){ // int * double
+					return "double";
+				} else if(strcmp(stype, "char") == 0){
+					return "short";
 				}
 			}
 			return "undef";
 		} else if(strcmp(token, "Mod") == 0){
-			if(strcmp(ftype, "int") == 0 || strcmp(ftype, "short") == 0){
-				if(strcmp(stype, "int") == 0 || strcmp(stype, "short") == 0){
-					return "int";
-				}
-			}
-			return "undef";
+			return "int";
 		}else if(strcmp(token, "Comma") == 0) {
 			return stype;
 		} else if(strcmp(token, "Store") == 0) {
