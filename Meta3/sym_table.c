@@ -175,7 +175,7 @@ void parse_func_declaration(Node *node, Symbol_Table *global){
 	while(symbol_aux != NULL) { // Goes through global symbol table to see if function was already declared
 		if(strcmp(name, symbol_aux->name) == 0){ // Was already declared
 			//SEMANTIC Symbol <Token> already defined
-			printf("Line %d, col %d: Symbol %s already defined\n", node_aux->line, node_aux->column, node_aux->token);s
+			//printf("Line %d, col %d: Symbol %s already defined\n", node_aux->line, node_aux->column, node_aux->token);s
 			return;
 		}
 		if(symbol_aux->next == NULL)
@@ -288,7 +288,7 @@ void parse_func_definition(Node *node, Symbol_Table *global){
 				insert_symbol(table_aux, symbol_sec_aux);
 			}
 			node_sec_aux = node_sec_aux->brother;
-		}
+		}	
 	}
 	table_aux->definition = 1;
 	while(strcmp(node_aux->token, "FuncBody") != 0){
@@ -304,7 +304,7 @@ void parse_func_definition(Node *node, Symbol_Table *global){
 	if(node_sec_aux != NULL){
 		find_declaration(node_sec_aux, table_aux); // Finds declarations inside of ifs and whiles
 	}
-	annotated_tree(node_aux, table_aux, global);
+	annotated_tree(node_sec_aux, table_aux, global);
 }
 
 void find_declaration(Node *node, Symbol_Table *local){
@@ -345,7 +345,7 @@ void parse_declaration(Node *node, Symbol_Table *table, int recursive){
 	symbol_aux->is_param = 0;
 	symbol_aux->next = NULL;
 	insert_symbol(table, symbol_aux);
-	if(!recursive){
+	if(!recursive){	
 		annotated_tree(node, table, table);
 	}
 }
@@ -361,8 +361,8 @@ char *lower_case(char *str){
 void annotated_tree(Node *root, Symbol_Table *local, Symbol_Table *global) {
     Node *node = root;
     //printf("Token:%s, Value:%s\n", node->token, node->value);
-    while(node != NULL) {
-		int result = add_type(node, local, global);
+    while(node != NULL) {	
+		int result = add_type(node, local, global); 
         if(result == -1 && node->child != NULL) {
             annotated_tree(node->child, local, global);
         }
@@ -374,7 +374,6 @@ void annotated_tree(Node *root, Symbol_Table *local, Symbol_Table *global) {
 
 int add_type(Node *node, Symbol_Table *local, Symbol_Table *global) {
 	//printf("Token: %s, Value: %s\n", node->token, node->value);
-
     if(strcmp(node->token, "Plus") == 0 || strcmp(node->token, "Minus") == 0 || strcmp(node->token, "Not") == 0) { // Unary
 		add_unary_type(node, local, global);
 		return 1;
@@ -407,8 +406,32 @@ int add_type(Node *node, Symbol_Table *local, Symbol_Table *global) {
     } else if(strcmp(node->token, "Declaration") == 0) {
 		add_declaration_types(node, local, global);
 		return 1;
+	} else if(strcmp(node->token, "FuncDeclaration") == 0 || strcmp(node->token, "FuncDefinition") == 0){
+		add_func_types(node, global);
+		return 1;
 	}
 	return -1;
+}
+
+void add_func_types(Node *node, Symbol_Table *global){
+	char *name = strdup(node->child->brother->value);
+	Node *node_aux = node;
+	Symbol_Table *global_aux = global->next, *table_aux;
+	while(strcmp(node_aux->token, "FuncBody") != 0){
+		if(node_aux->brother == NULL)
+			return;
+		node_aux = node_aux->brother;
+	}
+	if(node_aux->child != NULL){
+		node_aux = node_aux->child;
+		while(global_aux->next != NULL){
+			if(strcmp(global_aux->name, name) == 0){
+				table_aux = global_aux;
+			}
+			global_aux = global_aux->next;
+		}
+		add_type(node_aux, table_aux, global);
+	}
 }
 
 void add_unary_type(Node *node, Symbol_Table *local, Symbol_Table *global) {
@@ -515,9 +538,9 @@ void add_literal_type(Node *node, Symbol_Table *local, Symbol_Table *global) {
 }
 
 void add_declaration_types(Node *node, Symbol_Table *local, Symbol_Table *global) { // Only adds type to third child
-	if(strcmp(node->child->token, "Void") == 0){ // SEMANTIC
+	/*if(strcmp(node->child->token, "Void") == 0){ // SEMANTIC
 		printf("Line %d, col %d: Invalid use of void type in declaration\n", node->child->line, node->child->column);
-	} 
+	} */
 	if(node->child->brother->brother != NULL){
 		add_type(node->child->brother->brother, local, global);
 	}
