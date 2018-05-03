@@ -611,30 +611,30 @@ char* type_compare(char *ftype, char *stype, char *token) {
 				return ftype;
 			}
 			if(strcmp(ftype, "int") == 0) {
-				if(strcmp(stype, "short") == 0 || strcmp(stype, "char") == 0) { // int * char, int * int
+				if(strcmp(stype, "short") == 0 || strcmp(stype, "char") == 0) { // int & char, int & short
 					return "int";
-				} else if(strcmp(stype, "double") == 0){ // int * double
+				} else if(strcmp(stype, "double") == 0){ // int & double
 					return "double";
 				}
 			} else if(strcmp(ftype, "double") == 0) {
-				if(strcmp(stype, "double") == 0|| strcmp(stype,"char") == 0|| strcmp(stype,"int") == 0 || strcmp(stype, "short") == 0) { // double * double, double * int, double * char
+				if(strcmp(stype, "double") == 0|| strcmp(stype,"char") == 0|| strcmp(stype,"int") == 0 || strcmp(stype, "short") == 0) { // double & double, double & int, double & char, double & short
 					return "double";
 				}
 			} else if(strcmp(ftype, "char") == 0){
-				if(strcmp(stype, "short") == 0){
+				if(strcmp(stype, "short") == 0){ // char & short
 					return "short";
-				} else if(strcmp(stype, "double") == 0){
+				} else if(strcmp(stype, "double") == 0){ // char & double
 					return "double";
-				} else if(strcmp(stype, "int") == 0){
+				} else if(strcmp(stype, "int") == 0){ // char & int
 					return "int";
 				}
 
 			} else if(strcmp(ftype, "short") == 0){
-				if(strcmp(stype, "int") == 0) { // int * char, int * int
+				if(strcmp(stype, "int") == 0) { // short & int
 					return "int";
-				} else if(strcmp(stype, "double") == 0){ // int * double
+				} else if(strcmp(stype, "double") == 0){ // short & double
 					return "double";
-				} else if(strcmp(stype, "char") == 0){
+				} else if(strcmp(stype, "char") == 0){ // short & char
 					return "short";
 				}
 			}
