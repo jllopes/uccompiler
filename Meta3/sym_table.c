@@ -166,64 +166,151 @@ void parse_table(Node *node, Symbol_Table *table){
 }
 
 void parse_func_declaration(Node *node, Symbol_Table *global){
-	Symbol_Table *table_aux = (Symbol_Table*) malloc(sizeof(Symbol_Table)), *global_aux = global;
+	Symbol_Table *table_aux = (Symbol_Table*) malloc(sizeof(Symbol_Table)), *global_aux = global->next;
 	Node *node_aux = node->child; // Skips FuncDeclaration node
+	Node *name_node = node->child->brother;
+	Node *node_sec_aux;
 	char *type = strdup(node_aux->token); // Copies type to aux variable
 	char *name = strdup(node_aux->brother->value); // Copies name to aux variable
-	Symbol *symbol_aux = (Symbol*)malloc(sizeof(Symbol));
+	Symbol *symbol_aux = (Symbol*)malloc(sizeof(Symbol)), *symbol_sec_aux;
 	symbol_aux = global->symbol; // Finds first symbol on global table (never null because of default functions)
-	while(symbol_aux != NULL) { // Goes through global symbol table to see if function was already declared
-		if(strcmp(name, symbol_aux->name) == 0){ // Was already declared
+	int declared = 0;
+	while(global_aux != NULL) { // Goes through global symbol table to see if function was already declared
+		if(strcmp(name, global_aux->name) == 0){ // Was already declared
+			table_aux = global_aux;
+			declared = 1;
 			/*if(strcmp(symbol_aux->type, lower_case(type)) != 0){
 				//printf("%s\n",node_aux->child->token);
 				wrong = 1;
 				//printf("Line %d, col %d: Conflicting types (got %s, expected %s)\n", node_aux->brother->line, (int)(node_aux->brother->column-strlen(node_aux->brother->value)), lower_case(type), symbol_aux->type);
 			}*/
 			//printf("it's here\n");
-			printf("Line %d, col %d: Symbol %s already defined\n", node_aux->brother->line, (int)(node_aux->brother->column-strlen(node_aux->brother->value)), node_aux->brother->value);
-			return;
+			//printf("Line %d, col %d: Symbol %s already defined\n", node_aux->brother->line, (int)(node_aux->brother->column-strlen(node_aux->brother->value)), node_aux->brother->value);
+			//return;
 		}
-		if(symbol_aux->next == NULL)
+		if(global_aux->next == NULL)
 			break;
-		symbol_aux = symbol_aux->next;
-	}
-	symbol_aux = create_symbol(name, type); // Create function symbol to add to global table
-	table_aux = create_table(1, name); // Create symbol table for current function
-	// Table is create here to make sure it appears before next FuncDefinition, won't be printed if the functions isn't defined
-	add_return(table_aux, type); // Adds return type to local table
-	while(global_aux->next != NULL){ // Adds table to global table brothers
 		global_aux = global_aux->next;
 	}
-	global_aux->next = table_aux; // Add local table to global brothers
-	table_aux->definition = 0; // It's a declaration, variable says the functions hasn't yet been defined
-	while(strcmp(node_aux->token, "ParamList") != 0){ // Skips type and name
-		node_aux = node_aux->brother;
-	}
-	if(node_aux == NULL){
-		return;
-	}
-	node_aux = node_aux->child; // Skip ParamList, node_aux is now the first ParamDeclaration (1 is mandatory)
-	int params = 0;
-	while(node_aux != NULL){ // Check if there are more ParamDeclaration
-		if(strcmp(node_aux->child->token, "Void") == 0 && params > 0){
-			printf("Line %d, col %d: Invalid use of void type in declaration\n", node_aux->child->line, (int)(node_aux->child->column-strlen(node_aux->child->token)));
+	global_aux = global;
+	if(declared == 0){
+		symbol_aux = create_symbol(name, type); // Create function symbol to add to global table
+		table_aux = create_table(1, name); // Create symbol table for current function
+		// Table is create here to make sure it appears before next FuncDefinition, won't be printed if the functions isn't defined
+		add_return(table_aux, type); // Adds return type to local table
+		while(global_aux->next != NULL){ // Adds table to global table brothers
+			global_aux = global_aux->next;
 		}
-		if(node_aux->child->brother != NULL){ // Checks if param has id
-			Symbol *symbol_sec_aux = (Symbol*) malloc(sizeof(Symbol));
-			insert_param(symbol_aux, node_aux->child->brother->value, node_aux->child->token);
-			symbol_sec_aux->name = strdup(node_aux->child->brother->value);
-			symbol_sec_aux->type = strdup(lower_case(node_aux->child->token));
-			symbol_sec_aux->is_param = 1;
-			insert_symbol(table_aux, symbol_sec_aux); // Insert param on local table
-		} else {
-			insert_param(symbol_aux, NULL, node_aux->child->token);
+		global_aux->next = table_aux; // Add local table to global brothers
+		table_aux->definition = 0; // It's a declaration, variable says the functions hasn't yet been defined
+		while(strcmp(node_aux->token, "ParamList") != 0){ // Skips type and name
+			node_aux = node_aux->brother;
 		}
-		params++;
-		if(node_aux->brother == NULL)
-			break;
-		node_aux = node_aux->brother;
+		if(node_aux == NULL){
+			return;
+		}
+		node_aux = node_aux->child; // Skip ParamList, node_aux is now the first ParamDeclaration (1 is mandatory)
+		int params = 0;
+		while(node_aux != NULL){ // Check if there are more ParamDeclaration
+			if(strcmp(node_aux->child->token, "Void") == 0 && params > 0){
+				printf("Line %d, col %d: Invalid use of void type in declaration\n", node_aux->child->line, (int)(node_aux->child->column-strlen(node_aux->child->token)));
+			}
+			if(node_aux->child->brother != NULL){ // Checks if param has id
+				Symbol *symbol_sec_aux = (Symbol*) malloc(sizeof(Symbol));
+				insert_param(symbol_aux, node_aux->child->brother->value, node_aux->child->token);
+				symbol_sec_aux->name = strdup(node_aux->child->brother->value);
+				symbol_sec_aux->type = strdup(lower_case(node_aux->child->token));
+				symbol_sec_aux->is_param = 1;
+				insert_symbol(table_aux, symbol_sec_aux); // Insert param on local table
+			} else {
+				insert_param(symbol_aux, NULL, node_aux->child->token);
+			}
+			params++;
+			if(node_aux->brother == NULL)
+				break;
+			node_aux = node_aux->brother;
+		}
+		insert_symbol(global, symbol_aux); // Add function to global symbol table
+	} else {
+		global_aux = global->next; // Skips global table
+		int wrong = 0;
+		char *expected_type = table_aux->symbol->type;
+		if(strcmp(expected_type, lower_case(type)) != 0){
+			//printf("exp:%s, rec:%s\n", expected_type, type);
+			wrong = 1;
+			//printf("Line %d, col %d: Conflicting types (got %s, expected %s)\n", node_aux->line, (int)(node_aux->column-strlen(node_aux->token)), lower_case(node_aux->token), table_aux->symbol->type);
+		}
+		while(strcmp(node_aux->token, "ParamList") != 0){
+			node_aux = node_aux->brother;
+		}
+		int gotten_params = 0, expected_params = 0;
+		//printf("..%s..\n", node_aux->child->child->token);
+		node_sec_aux = node_aux->child; // Skip ParamList
+		Param *param = (Param*)malloc(sizeof(Param));/*, param_aux, param_sec_aux;*/
+		//Symbol *received_params = (Symbol*)malloc(sizeof(Symbol));
+		Symbol *symbol_aux = global->symbol;
+		while(symbol_aux != NULL){
+			if(strcmp(symbol_aux->name, name) == 0){
+				param = symbol_aux->param;
+				break;
+			}
+			symbol_aux = symbol_aux->next;
+		}
+
+		// Param = function expected params
+		//int params = 0;
+		Symbol *symbol_thi_aux = (Symbol*)malloc(sizeof(Symbol));
+		while(param != NULL){
+			param = param->next;
+			expected_params++;
+		}
+		while(node_sec_aux != NULL){
+			gotten_params++;
+			if(node_sec_aux->child->brother != NULL){
+				insert_param(symbol_thi_aux, node_sec_aux->child->brother->value, node_sec_aux->child->token);
+				//printf("tok:%s, value:%s\n", node_sec_aux->child->token, node_sec_aux->child->brother->value);
+				symbol_sec_aux = (Symbol*) malloc(sizeof(Symbol));
+				symbol_sec_aux->name = strdup(node_sec_aux->child->brother->value);
+				symbol_sec_aux->type = strdup(lower_case(node_sec_aux->child->token));
+				symbol_sec_aux->is_param = 1;
+				insert_symbol(table_aux, symbol_sec_aux);
+			} else {
+				insert_param(symbol_thi_aux, NULL, node_sec_aux->child->token);
+			}
+			if(node_sec_aux->brother == NULL)
+				break;
+			node_sec_aux = node_sec_aux->brother;
+		}
+		node_sec_aux = node_aux->child;
+		param = symbol_aux->param;
+		while(node_sec_aux != NULL){
+			//printf("exp:%s, rec:%s\n", param->type, node_sec_aux->child->token);
+			/*if(param->type == NULL){
+				wrong = 1;
+				break;
+			}*/
+			if(strcmp(lower_case(node_sec_aux->child->token), param->type) != 0 /*|| (node_sec_aux->brother != NULL && param->next == NULL) || (node_sec_aux->brother == NULL && param->next != NULL)*/){
+				wrong = 1;
+				break;
+			}
+			if(node_sec_aux->brother == NULL)
+				break;
+			node_sec_aux = node_sec_aux->brother;
+			if(param->next == NULL)
+				break;
+			param = param->next;
+		}
+		if(wrong == 1){
+			printf("Line %d, col %d: Conflicting types (got %s", name_node->line, (int)(name_node->column-strlen(name_node->value)), lower_case(type));
+			if(symbol_thi_aux->param != NULL){
+				print_params(symbol_thi_aux);
+			}
+			printf(", expected %s", expected_type);
+			print_params(symbol_aux);
+			printf(")\n");
+		}
 	}
-	insert_symbol(global, symbol_aux); // Add function to global symbol table
+	
 }
 
 void parse_func_definition(Node *node, Symbol_Table *global){
@@ -295,7 +382,7 @@ void parse_func_definition(Node *node, Symbol_Table *global){
 		int wrong = 0;
 		char *expected_type = table_aux->symbol->type;
 		if(strcmp(expected_type, lower_case(type)) != 0){
-			printf("exp:%s, rec:%s\n", expected_type, type);
+			//printf("exp:%s, rec:%s\n", expected_type, type);
 			wrong = 1;
 			//printf("Line %d, col %d: Conflicting types (got %s, expected %s)\n", node_aux->line, (int)(node_aux->column-strlen(node_aux->token)), lower_case(node_aux->token), table_aux->symbol->type);
 		}
@@ -515,7 +602,7 @@ int add_type(Node *node, Symbol_Table *local, Symbol_Table *global) {
     } else if(strcmp(node->token, "Call") == 0){ // Call
 		add_call_type(node, local, global);
 		return 1;
-    } else if(strcmp(node->token, "Eq") == 0 || strcmp(node->token, "Ne") == 0 || strcmp(node->token, "Le") == 0 || strcmp(node->token, "Ge") == 0 || strcmp(node->token, "Lt") == 0 || strcmp(node->token, "Gt") == 0 || strcmp(node->token, "And") == 0 || strcmp(node->token, "Or") == 0 || strcmp(node->token, "BitwiseAnd") == 0 || strcmp(node->token, "BitwiseOr") == 0 || strcmp(node->token, "BitwiseXor") == 0) { // Comparisons
+    } else if(strcmp(node->token, "Eq") == 0 || strcmp(node->token, "Ne") == 0 || strcmp(node->token, "Le") == 0 || strcmp(node->token, "Ge") == 0 || strcmp(node->token, "Lt") == 0 || strcmp(node->token, "Gt") == 0 || strcmp(node->token, "And") == 0 || strcmp(node->token, "Or") == 0 || strcmp(node->token, "BitWiseAnd") == 0 || strcmp(node->token, "BitWiseOr") == 0 || strcmp(node->token, "BitWiseXor") == 0) { // Comparisons
 		add_comparison_type(node, local, global);
 		return 1;
     } else if(strcmp(node->token, "IntLit") == 0 || strcmp(node->token, "ChrLit") == 0 || strcmp(node->token, "RealLit") == 0) { // Literals
