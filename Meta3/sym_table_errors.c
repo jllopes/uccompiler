@@ -213,11 +213,11 @@ void parse_func_declaration(Node *node, Symbol_Table *global){
 		int params = 0;
 		int first_void = 0, line = 0, column = 0;
 		while(node_aux != NULL){ // Check if there are more ParamDeclaration
-			if(params > 0 && first_void == 1){
-				printf("Line %d, col %d: Invalid use of void type in declaration\n", line, column);
-				return;
-			}
 			if(strcmp(node_aux->child->token, "Void") == 0){
+				if(params > 0 && first_void == 1){
+					printf("Line %d, col %d: Invalid use of void type in declaration\n", line, column);
+					return;
+				}
 				if(params == 0){
 					first_void = 1;
 					line = node_aux->child->line;
@@ -288,11 +288,11 @@ void parse_func_declaration(Node *node, Symbol_Table *global){
 		//table_aux->next = NULL;
 		while(node_sec_aux != NULL){
 			gotten_params++;
-			if(gotten_params > 0 && first_void == 1){
-				printf("Line %d, col %d: Invalid use of void type in declaration\n", line, column);
-				return;
-			}
 			if(strcmp(node_aux->child->token, "Void") == 0){
+				if(gotten_params > 0 && first_void == 1){
+					printf("Line %d, col %d: Invalid use of void type in declaration\n", line, column);
+					return;
+				}
 				if(gotten_params == 0){
 					first_void = 1;
 					line = node_aux->child->line;
