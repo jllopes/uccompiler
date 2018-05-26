@@ -1,3 +1,0 @@
-TODO::
-
--- Parametros recebidos são guardados em variáveis temp
