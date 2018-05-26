@@ -83,11 +83,11 @@ void declaration_gen(Node *node, char *function){
 void local_declaration_gen(Node *node, char *function){
 	char *type = types_to_llvm(node->child->token);
 	char *name = node->child->brother->value;
-	printf("%%%s.%s = alloca %s\n", function, name, type);
+	printf("%%%s = alloca %s\n", name, type);
 	if(node->child->brother->brother != NULL){
 		printf("store %s ", type);
 		code_gen(node->child->brother->brother, function);
-		printf(", %s* %%%s.%s\n", type, function, name);
+		printf(", %s* %%%s\n", type, name);
 	}
 }
 
@@ -160,7 +160,7 @@ void store_gen(Node *node, char *function){
 	char *name = node->child->value;
 	printf("store %s ", type);
 	code_gen(node->child->brother, function);
-	printf(", %s* %%%s.%s\n", type, function, name);
+	printf(", %s* %%%s\n", type, name);
 }
 
 void minus_gen(Node *node, char *function){
@@ -171,26 +171,48 @@ void minus_gen(Node *node, char *function){
 void call_gen(Node *node, char *function){
 	char *name = node->child->value;
 	char *type = types_to_llvm(node->child->type);
+	Symbol *symbol = global->symbol;
+	while(symbol != NULL){
+		if(!strcmp(symbol->name, name)){
+			break;
+		}
+		symbol = symbol->next;
+	}
 	Node *aux = node->child->brother; /* First Param */
-	char *param_type;
+	Param *param = symbol->param;
+	char *param_type, *expected_type;
 	int temp = temporary_var;
 	while(aux != NULL){
 		param_type = types_to_llvm(aux->type);
-		printf("%%%d = load %s, %s* %%%s.%s\n", temporary_var, param_type, param_type, function, aux->value);
+		expected_type = types_to_llvm(param->type);
+		if(strcmp(param_type, expected_type)){ /* Different types */
+			printf("%%%d = load %s, %s* %%%s\n", temporary_var, param_type, param_type, aux->value);
+			temporary_var++;
+			printf("%%%d = sext %s %%%d to %s\n", temporary_var, param_type, temporary_var-1, expected_type);
+		} else {
+			printf("%%%d = load %s, %s* %%%s\n", temporary_var, param_type, param_type, aux->value);
+		}
 		temporary_var++;
+		param = param->next;
 		aux = aux->brother;
 	}
 	printf("%%%d = call %s @%s(", temporary_var, type, name);
 	temporary_var++;
 	aux = node->child->brother;
+	param = symbol->param;
 	while(aux != NULL){
 		param_type = types_to_llvm(aux->type);
+		expected_type = types_to_llvm(param->type);
+		if(strcmp(param_type, expected_type)){
+			temp++;
+		}
 		if(aux->brother == NULL){
-			printf("%s %%%d)\n", param_type, temp);
+			printf("%s %%%d)\n", expected_type, temp);
 		} else {
-			printf("%s %%%d,",  param_type, temp);
+			printf("%s %%%d,",  expected_type, temp);
 		}
 		temp++;
+		param = param->next;
 		aux = aux->brother;
 	}
 }
@@ -198,7 +220,7 @@ void call_gen(Node *node, char *function){
 void return_gen(Node *node, char *function){
 	char *name = node->child->value;
 	char *type = types_to_llvm(node->child->type);
-	printf("%%%d = load %s, %s* %%%s.%s\n", temporary_var, type, type, function, name);
+	printf("%%%d = load %s, %s* %%%s\n", temporary_var, type, type, name);
 	printf("ret %s %%%d\n", type, temporary_var);
 	temporary_var++;
 }

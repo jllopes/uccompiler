@@ -21,6 +21,7 @@ struct Symbol_Table{
 	Symbol *symbol;
 };
 
+Symbol_Table *global;
 Symbol_Table* sym_table;
 Symbol_Table* create_table(int type, char *name);
 Symbol* create_symbol(char *name, char *type);

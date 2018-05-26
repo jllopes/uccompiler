@@ -144,7 +144,7 @@ int main(int argc, char **argv){
 	} else {
 		flag_syntax = 1;
 		yyparse();
-		Symbol_Table *global = create_default_table();
+		global = create_default_table();
 		parse_table(root, global);
 		if(!flag_error){
 			//LLVM IR GENERATED HERE
