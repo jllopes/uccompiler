@@ -148,7 +148,7 @@ int main(int argc, char **argv){
 		parse_table(root, global);
 		if(!flag_error){
 			//LLVM IR GENERATED HERE
-			code_gen(root, NULL);
+			code_gen(root);
 		}
 
 	}

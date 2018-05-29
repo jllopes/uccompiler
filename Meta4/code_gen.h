@@ -4,17 +4,19 @@
 
 int temporary_var;
 char* types_to_llvm(char* type);
-void code_gen(Node *node, char *function);
-void program_gen(Node *node, char *function);
-void declaration_gen(Node* node, char *function);
-void func_definition_gen(Node *node, char *function);
-void params_gen(Node *node, char *function);
-void func_body_gen(Node *node, char *function);
-void chrlit_gen(Node *node, char *function);
-void intlit_gen(Node *node, char *function);
-void reallit_gen(Node *node, char *function);
-void store_gen(Node *node, char *function);
-void minus_gen(Node *node, char *function);
-void call_gen(Node *node, char *function);
-void return_gen(Node *node, char *function);
+void code_gen(Node *node);
+void program_gen(Node *node);
+void declaration_gen(Node* node);
+void func_definition_gen(Node *node);
+void params_gen(Node *node);
+void func_body_gen(Node *node);
+void chrlit_gen(Node *node);
+void intlit_gen(Node *node);
+void reallit_gen(Node *node);
+void id_gen(Node *node);
+void store_gen(Node *node);
+void minus_gen(Node *node);
+void call_gen(Node *node);
+void return_gen(Node *node);
+void convert_types(Node *param, char *expected);
 #endif //CODE_GEN_H
