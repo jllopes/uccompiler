@@ -18,5 +18,11 @@ void store_gen(Node *node);
 void minus_gen(Node *node);
 void call_gen(Node *node);
 void return_gen(Node *node);
+void add_gen(Node *node);
+void sub_gen(Node *node);
+void mul_gen(Node *node);
+void div_gen(Node *node);
+void mod_gen(Node *node);
+int is_global(char *name);
 void convert_types(Node *param, char *expected);
 #endif //CODE_GEN_H
