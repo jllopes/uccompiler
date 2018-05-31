@@ -150,6 +150,7 @@ void local_declaration_gen(Node *node){
 void func_definition_gen(Node *node){
 	temporary_var = 1;
 	and_cmp = 1;
+	or_cmp = 1;
 	char *type = types_to_llvm(node->child->token);
 	char *name = node->child->brother->value; /* Value from ID */
 	printf("define %s @%s", type, name);
@@ -197,7 +198,6 @@ void func_body_gen(Node *node){
 			break;
 		aux = aux->brother;
 	}
-	
 }
 
 void chrlit_gen(Node *node){
@@ -330,7 +330,6 @@ void minus_gen(Node *node){
 		}
 		temporary_var++;
 	}
-	
 }
 
 void call_gen(Node *node){
@@ -359,7 +358,11 @@ void call_gen(Node *node){
 				temporary_var++;
 				convert_types(aux, expected_type);
 				param_array[params] = temporary_var-1; /* Access on call */
+			} else if(!strcmp(aux->token, "IntLit") || !strcmp(aux->token, "ChrLit") || !strcmp(aux->token, "RealLit")){
+				convert_types(aux, expected_type);
+				param_array[params] = temporary_var-1;
 			} else {
+				code_gen(aux);
 				convert_types(aux, expected_type);
 				param_array[params] = temporary_var-1;
 			}
@@ -370,7 +373,10 @@ void call_gen(Node *node){
 				printf("\n");
 				param_array[params] = temporary_var; /* Access on call */
 				temporary_var++;
-			}
+			} else if(is_expression(aux)){
+				code_gen(aux);
+				param_array[params] = temporary_var-1;
+			} 
 		}
 		params++;
 		param = param->next;
@@ -392,20 +398,20 @@ void call_gen(Node *node){
 			}
 		} else {
 			if(aux->brother == NULL){
-				if(!strcmp(aux->token, "Id")){
-					printf("%s %%%d)\n", expected_type, param_array[temp]);
-				} else {
+				if(!strcmp(aux->token, "IntLit") || !strcmp(aux->token, "ChrLit") || !strcmp(aux->token, "RealLit")){
 					printf("%s ", expected_type);
 					code_gen(aux);
 					printf(")\n");
+				} else {
+					printf("%s %%%d)\n", expected_type, param_array[temp]);
 				}
 			} else {
-				if(!strcmp(aux->token, "Id")){
-					printf("%s %%%d,",  expected_type, param_array[temp]);
-				} else {
+				if(!strcmp(aux->token, "IntLit") || !strcmp(aux->token, "ChrLit") || !strcmp(aux->token, "RealLit")){
 					printf("%s ", expected_type);
 					code_gen(aux);
-					printf(",");
+					printf(",\n");
+				} else {
+					printf("%s %%%d,\n", expected_type, param_array[temp]);
 				}
 			}
 		}
@@ -428,7 +434,6 @@ void return_gen(Node *node){
 		code_gen(node->child);
 		printf("\n");
 	}
-	
 }
 
 void add_gen(Node *node){
@@ -446,7 +451,13 @@ void add_gen(Node *node){
 			convert_types(node->child, result_type);
 			local_vars[0] = temporary_var-1;
 		}
-	}
+	} else if(is_expression(node->child)){
+		code_gen(node->child);
+		if(strcmp(types_to_llvm(first_type), result_type)){
+			convert_types(node->child, result_type);
+		}
+		local_vars[0] = temporary_var-1;
+	}		
 	if(!strcmp(node->child->brother->token, "Id")){
 		printf("%%%d = load %s, %s* ", temporary_var, types_to_llvm(second_type), types_to_llvm(second_type));
 		code_gen(node->child->brother);
@@ -457,21 +468,43 @@ void add_gen(Node *node){
 			convert_types(node->child->brother, result_type);
 			local_vars[1] = temporary_var-1;
 		}
+	} else if(is_expression(node->child->brother)){
+		code_gen(node->child->brother);
+		if(strcmp(types_to_llvm(second_type), result_type)){
+			convert_types(node->child->brother, result_type);
+		}
+		local_vars[1] = temporary_var-1;
 	}
-	if(!strcmp(node->child->token, "Id") || !strcmp(first_type, result_type)){ /* First is ID or different type */
-		if(!strcmp(node->child->brother->token, "Id") || !strcmp(second_type, result_type)){ /* First + Second is ID or different type*/
-			printf("%%%d = add %s %%%d, %%%d\n", temporary_var, result_type, local_vars[0], local_vars[1]);
+	if(!strcmp(node->child->token, "Id") || is_expression(node->child) || !strcmp(first_type, result_type)){ /* First is ID or different type */
+		if(!strcmp(node->child->brother->token, "Id") || is_expression(node->child->brother) || !strcmp(second_type, result_type)){ /* First + Second is ID or different type*/
+			if(!strcmp(result_type, "double")){
+				printf("%%%d = fadd %s %%%d, %%%d\n", temporary_var, result_type, local_vars[0], local_vars[1]);
+			} else {
+				printf("%%%d = add %s %%%d, %%%d\n", temporary_var, result_type, local_vars[0], local_vars[1]);
+			}
 		} else {
-			printf("%%%d = add %s %%%d, ", temporary_var, result_type, local_vars[0]);
+			if(!strcmp(result_type, "double")){
+				printf("%%%d = fadd %s %%%d, ", temporary_var, result_type, local_vars[0]);
+			} else {
+				printf("%%%d = add %s %%%d, ", temporary_var, result_type, local_vars[0]);
+			}
 			code_gen(node->child); 
 			printf("\n");
 		}
-	} else if(!strcmp(node->child->brother->token, "Id") || !strcmp(second_type, result_type)){  /* Second is ID */
-		printf("%%%d = add %s ", temporary_var, result_type);
+	} else if(!strcmp(node->child->brother->token, "Id") || is_expression(node->child->brother) || !strcmp(second_type, result_type)){  /* Second is ID */
+		if(!strcmp(result_type, "double")){
+			printf("%%%d = fadd %s ", temporary_var, result_type);
+		} else {
+			printf("%%%d = add %s ", temporary_var, result_type);	
+		}
 		code_gen(node->child); 
 		printf(", %%%d\n", local_vars[1]);
 	} else { /* None is ID */
-		printf("%%%d = add %s ", temporary_var, result_type);
+		if(!strcmp(result_type, "double")){
+			printf("%%%d = fadd %s ", temporary_var, result_type);	
+		} else {
+			printf("%%%d = add %s ", temporary_var, result_type);	
+		}
 		code_gen(node->child);
 		printf(", ");
 		code_gen(node->child->brother);
@@ -495,7 +528,10 @@ void sub_gen(Node *node){
 			convert_types(node->child, result_type);
 			local_vars[0] = temporary_var-1;
 		}
-	}
+	} else if(is_expression(node->child)){
+		code_gen(node->child);
+		local_vars[0] = temporary_var-1;
+	}		
 	if(!strcmp(node->child->brother->token, "Id")){
 		printf("%%%d = load %s, %s* ", temporary_var, types_to_llvm(second_type), types_to_llvm(second_type));
 		code_gen(node->child->brother);
@@ -506,21 +542,40 @@ void sub_gen(Node *node){
 			convert_types(node->child->brother, result_type);
 			local_vars[1] = temporary_var-1;
 		}
+	} else if(is_expression(node->child->brother)){
+		code_gen(node->child->brother);
+		local_vars[1] = temporary_var-1;
 	}
-	if(!strcmp(node->child->token, "Id") || !strcmp(first_type, result_type)){ /* First is ID or different type */
-		if(!strcmp(node->child->brother->token, "Id") || !strcmp(second_type, result_type)){ /* First + Second is ID or different type*/
-			printf("%%%d = sub %s %%%d, %%%d\n", temporary_var, result_type, local_vars[0], local_vars[1]);
+	if(!strcmp(node->child->token, "Id") || is_expression(node->child) || !strcmp(first_type, result_type)){ /* First is ID or different type */
+		if(!strcmp(node->child->brother->token, "Id") || is_expression(node->child->brother) || !strcmp(second_type, result_type)){ /* First + Second is ID or different type*/
+			if(!strcmp(result_type, "double")){
+				printf("%%%d = fsub %s %%%d, %%%d\n", temporary_var, result_type, local_vars[0], local_vars[1]);
+			} else {
+				printf("%%%d = sub %s %%%d, %%%d\n", temporary_var, result_type, local_vars[0], local_vars[1]);
+			}
 		} else {
-			printf("%%%d = sub %s %%%d, ", temporary_var, result_type, local_vars[0]);
+			if(!strcmp(result_type, "double")){
+				printf("%%%d = fsub %s %%%d, ", temporary_var, result_type, local_vars[0]);
+			} else {
+				printf("%%%d = sub %s %%%d, ", temporary_var, result_type, local_vars[0]);
+			}
 			code_gen(node->child); 
 			printf("\n");
 		}
-	} else if(!strcmp(node->child->brother->token, "Id") || !strcmp(second_type, result_type)){  /* Second is ID */
-		printf("%%%d = sub %s ", temporary_var, result_type);
+	} else if(!strcmp(node->child->brother->token, "Id") || is_expression(node->child->brother) || !strcmp(second_type, result_type)){  /* Second is ID */
+		if(!strcmp(result_type, "double")){
+			printf("%%%d = fsub %s ", temporary_var, result_type);
+		} else {
+			printf("%%%d = sub %s ", temporary_var, result_type);	
+		}
 		code_gen(node->child); 
 		printf(", %%%d\n", local_vars[1]);
 	} else { /* None is ID */
-		printf("%%%d = sub %s ", temporary_var, result_type);
+		if(!strcmp(result_type, "double")){
+			printf("%%%d = fsub %s ", temporary_var, result_type);	
+		} else {
+			printf("%%%d = sub %s ", temporary_var, result_type);	
+		}
 		code_gen(node->child);
 		printf(", ");
 		code_gen(node->child->brother);
@@ -544,7 +599,10 @@ void mul_gen(Node *node){
 			convert_types(node->child, result_type);
 			local_vars[0] = temporary_var-1;
 		}
-	}
+	} else if(is_expression(node->child)){
+		code_gen(node->child);
+		local_vars[0] = temporary_var-1;
+	}		
 	if(!strcmp(node->child->brother->token, "Id")){
 		printf("%%%d = load %s, %s* ", temporary_var, types_to_llvm(second_type), types_to_llvm(second_type));
 		code_gen(node->child->brother);
@@ -555,21 +613,40 @@ void mul_gen(Node *node){
 			convert_types(node->child->brother, result_type);
 			local_vars[1] = temporary_var-1;
 		}
+	} else if(is_expression(node->child->brother)){
+		code_gen(node->child->brother);
+		local_vars[1] = temporary_var-1;
 	}
-	if(!strcmp(node->child->token, "Id") || !strcmp(first_type, result_type)){ /* First is ID or different type */
-		if(!strcmp(node->child->brother->token, "Id") || !strcmp(second_type, result_type)){ /* First + Second is ID or different type*/
-			printf("%%%d = mul %s %%%d, %%%d\n", temporary_var, result_type, local_vars[0], local_vars[1]);
+	if(!strcmp(node->child->token, "Id") || is_expression(node->child) || !strcmp(first_type, result_type)){ /* First is ID or different type */
+		if(!strcmp(node->child->brother->token, "Id") || is_expression(node->child->brother) || !strcmp(second_type, result_type)){ /* First + Second is ID or different type*/
+			if(!strcmp(result_type, "double")){
+				printf("%%%d = fmul %s %%%d, %%%d\n", temporary_var, result_type, local_vars[0], local_vars[1]);
+			} else {
+				printf("%%%d = mul %s %%%d, %%%d\n", temporary_var, result_type, local_vars[0], local_vars[1]);
+			}
 		} else {
-			printf("%%%d = mul %s %%%d, ", temporary_var, result_type, local_vars[0]);
+			if(!strcmp(result_type, "double")){
+				printf("%%%d = fmul %s %%%d, ", temporary_var, result_type, local_vars[0]);
+			} else {
+				printf("%%%d = mul %s %%%d, ", temporary_var, result_type, local_vars[0]);
+			}
 			code_gen(node->child); 
 			printf("\n");
 		}
-	} else if(!strcmp(node->child->brother->token, "Id") || !strcmp(second_type, result_type)){  /* Second is ID */
-		printf("%%%d = mul %s ", temporary_var, result_type);
+	} else if(!strcmp(node->child->brother->token, "Id") || is_expression(node->child->brother) || !strcmp(second_type, result_type)){  /* Second is ID */
+		if(!strcmp(result_type, "double")){
+			printf("%%%d = fmul %s ", temporary_var, result_type);
+		} else {
+			printf("%%%d = mul %s ", temporary_var, result_type);	
+		}
 		code_gen(node->child); 
 		printf(", %%%d\n", local_vars[1]);
 	} else { /* None is ID */
-		printf("%%%d = mul %s ", temporary_var, result_type);
+		if(!strcmp(result_type, "double")){
+			printf("%%%d = fmul %s ", temporary_var, result_type);	
+		} else {
+			printf("%%%d = mul %s ", temporary_var, result_type);	
+		}
 		code_gen(node->child);
 		printf(", ");
 		code_gen(node->child->brother);
@@ -593,7 +670,10 @@ void div_gen(Node *node){
 			convert_types(node->child, result_type);
 			local_vars[0] = temporary_var-1;
 		}
-	}
+	} else if(is_expression(node->child)){
+		code_gen(node->child);
+		local_vars[0] = temporary_var-1;
+	}		
 	if(!strcmp(node->child->brother->token, "Id")){
 		printf("%%%d = load %s, %s* ", temporary_var, types_to_llvm(second_type), types_to_llvm(second_type));
 		code_gen(node->child->brother);
@@ -604,21 +684,40 @@ void div_gen(Node *node){
 			convert_types(node->child->brother, result_type);
 			local_vars[1] = temporary_var-1;
 		}
+	} else if(is_expression(node->child->brother)){
+		code_gen(node->child->brother);
+		local_vars[1] = temporary_var-1;
 	}
-	if(!strcmp(node->child->token, "Id") || !strcmp(first_type, result_type)){ /* First is ID or different type */
-		if(!strcmp(node->child->brother->token, "Id") || !strcmp(second_type, result_type)){ /* First + Second is ID or different type*/
-			printf("%%%d = sdiv %s %%%d, %%%d\n", temporary_var, result_type, local_vars[0], local_vars[1]);
+	if(!strcmp(node->child->token, "Id") || is_expression(node->child) || !strcmp(first_type, result_type)){ /* First is ID or different type */
+		if(!strcmp(node->child->brother->token, "Id") || is_expression(node->child->brother) || !strcmp(second_type, result_type)){ /* First + Second is ID or different type*/
+			if(!strcmp(result_type, "double")){
+				printf("%%%d = fdiv %s %%%d, %%%d\n", temporary_var, result_type, local_vars[0], local_vars[1]);
+			} else {
+				printf("%%%d = sdiv %s %%%d, %%%d\n", temporary_var, result_type, local_vars[0], local_vars[1]);
+			}
 		} else {
-			printf("%%%d = sdiv %s %%%d, ", temporary_var, result_type, local_vars[0]);
+			if(!strcmp(result_type, "double")){
+				printf("%%%d = fdiv %s %%%d, ", temporary_var, result_type, local_vars[0]);
+			} else {
+				printf("%%%d = sdiv %s %%%d, ", temporary_var, result_type, local_vars[0]);
+			}
 			code_gen(node->child); 
 			printf("\n");
 		}
-	} else if(!strcmp(node->child->brother->token, "Id") || !strcmp(second_type, result_type)){  /* Second is ID */
-		printf("%%%d = sdiv %s ", temporary_var, result_type);
+	} else if(!strcmp(node->child->brother->token, "Id") || is_expression(node->child->brother) || !strcmp(second_type, result_type)){  /* Second is ID */
+		if(!strcmp(result_type, "double")){
+			printf("%%%d = fdiv %s ", temporary_var, result_type);
+		} else {
+			printf("%%%d = sdiv %s ", temporary_var, result_type);	
+		}
 		code_gen(node->child); 
 		printf(", %%%d\n", local_vars[1]);
 	} else { /* None is ID */
-		printf("%%%d = sdiv %s ", temporary_var, result_type);
+		if(!strcmp(result_type, "double")){
+			printf("%%%d = fdiv %s ", temporary_var, result_type);	
+		} else {
+			printf("%%%d = sdiv %s ", temporary_var, result_type);	
+		}
 		code_gen(node->child);
 		printf(", ");
 		code_gen(node->child->brother);
@@ -677,44 +776,331 @@ void mod_gen(Node *node){
 }
 
 void or_gen(Node *node){
-
-}
-
-void and_gen(Node *node){
-	int start = temporary_var-1;
+	or_cmp++;
+	printf("\nbr label %%orfalse%d\n", or_cmp-1);
+	printf("orfalse%d:\n", or_cmp-1);
 	if(!strcmp(node->child->token, "Id")){
 		printf("%%%d = load %s, %s* ", temporary_var, types_to_llvm(node->child->type), types_to_llvm(node->child->type));
 		code_gen(node->child);
 		printf("\n");
 		temporary_var++;
+		if(!strcmp(types_to_llvm(node->child->type), "double")){
+			printf("%%%d = fcmp une double %%%d, 0.000000e+00\n", temporary_var, temporary_var-1);
+		} else {
+			if(strcmp(types_to_llvm(node->child->type), "i32")){
+				convert_types(node->child, "i32");
+			}
+			printf("%%%d = icmp ne i32 %%%d, 0\n", temporary_var, temporary_var-1);
+		}
+		temporary_var++;
 	} else if(!strcmp(node->child->token, "IntLit") || !strcmp(node->child->token, "ChrLit") || !strcmp(node->child->token, "RealLit")){
-		continue;
+		if(!strcmp(types_to_llvm(node->child->type), "double")){
+			printf("%%%d = fcmp une double %s, 0.000000e+00\n", temporary_var, node->child->value);
+		} else {
+			if(strcmp(types_to_llvm(node->child->type), "i32")){
+				convert_types(node->child, "i32");
+				printf("%%%d = icmp ne i32 %%%d, 0\n", temporary_var, temporary_var-1);
+			} else {
+				printf("%%%d = icmp ne i32 %s, 0\n", temporary_var, node->child->value);
+			}	
+		}
+		temporary_var++;
 	} else {
 		code_gen(node->child);
+		if(!strcmp(types_to_llvm(node->child->type), "double")){
+			printf("%%%d = fcmp une double %%%d, 0.000000e+00\n", temporary_var, temporary_var-1);
+		} else {
+			if(strcmp(types_to_llvm(node->child->type), "i32")){
+				convert_types(node->child, "i32");
+			}
+			printf("%%%d = icmp ne i32 %%%d, 0\n", temporary_var, temporary_var-1);
+		}
+		temporary_var++;
 	}
-	if(!strcmp(node->child->token, "IntLit") || !strcmp(node->child->token, "RealLit") || !strcmp(node->child->token, "ChrLit"){
-		printf("%%%d = icmp ne %s %")
+	printf("br i1 %%%d, label %%orend%d, label %%ortrue%d\n", temporary_var-1, or_cmp-1, or_cmp-1);
+	printf("ortrue%d:\n", or_cmp-1);
+	if(!strcmp(node->child->brother->token, "Id")){
+		printf("%%%d = load %s, %s* ", temporary_var, types_to_llvm(node->child->brother->type), types_to_llvm(node->child->brother->type));
+		code_gen(node->child->brother);
+		printf("\n");
+		temporary_var++;
+		if(!strcmp(types_to_llvm(node->child->brother->type), "double")){
+			printf("%%%d = fcmp une double %%%d, 0.000000e+00\n", temporary_var, temporary_var-1);
+		} else {
+			if(strcmp(types_to_llvm(node->child->brother->type), "i32")){
+				convert_types(node->child->brother, "i32");
+			}
+			printf("%%%d = icmp ne i32 %%%d, 0\n", temporary_var, temporary_var-1);
+		}
+		temporary_var++;
+	} else if(!strcmp(node->child->brother->token, "IntLit") || !strcmp(node->child->brother->token, "ChrLit") || !strcmp(node->child->brother->token, "RealLit")){
+		if(!strcmp(types_to_llvm(node->child->brother->type), "double")){
+			printf("%%%d = fcmp une double %s, 0.000000e+00\n", temporary_var, node->child->brother->value);
+		} else {
+			if(strcmp(types_to_llvm(node->child->brother->type), "i32")){
+				convert_types(node->child->brother, "i32");
+				printf("%%%d = icmp ne i32 %%%d, 0\n", temporary_var, temporary_var-1);
+			} else {
+				printf("%%%d = icmp ne i32 %s, 0\n", temporary_var, node->child->brother->value);
+			}	
+		}
+		temporary_var++;
+	} else {
+		code_gen(node->child->brother);
+		if(!strcmp(types_to_llvm(node->child->brother->type), "double")){
+			printf("%%%d = fcmp une double %%%d, 0.000000e+00\n", temporary_var, temporary_var-1);
+		} else {
+			if(strcmp(types_to_llvm(node->child->brother->type), "i32")){
+				convert_types(node->child->brother, "i32");
+			}
+			printf("%%%d = icmp ne i32 %%%d, 0\n", temporary_var, temporary_var-1);
+		}
+		temporary_var++;
 	}
-	printf("br i1 %%%d, label %%andtrue%d, label %%andend%d\n", temporary_var-1, and_cmp, and_cmp);
+	printf("br label %%orend%d\n", or_cmp-1);
+	printf("orend%d:\n", or_cmp-1);
+	printf("%%%d = phi i1 [ true, %%orfalse%d ], [ %%%d, %%ortrue%d ]\n", temporary_var, or_cmp-1, temporary_var-1, or_cmp-1);
+	temporary_var++;
+	printf("%%%d = zext i1 %%%d to i32\n", temporary_var, temporary_var-1);
+	temporary_var++;
+}
+
+void and_gen(Node *node){
 	and_cmp++;
-	code_gen(node->child->brother);
-	printf("andtrue%d:\n", and_cmp-1);
+	printf("\nbr label %%andfalse%d\n", and_cmp-1);
+	printf("andfalse%d:\n", and_cmp-1);
+	if(!strcmp(node->child->token, "Id")){
+		printf("%%%d = load %s, %s* ", temporary_var, types_to_llvm(node->child->type), types_to_llvm(node->child->type));
+		code_gen(node->child);
+		printf("\n");
+		temporary_var++;
+		if(!strcmp(types_to_llvm(node->child->type), "double")){
+			printf("%%%d = fcmp une double %%%d, 0.000000e+00\n", temporary_var, temporary_var-1);
+		} else {
+			if(strcmp(types_to_llvm(node->child->type), "i32")){
+				convert_types(node->child, "i32");
+			}
+			printf("%%%d = icmp ne i32 %%%d, 0\n", temporary_var, temporary_var-1);
+		}
+		temporary_var++;
+	} else if(!strcmp(node->child->token, "IntLit") || !strcmp(node->child->token, "ChrLit") || !strcmp(node->child->token, "RealLit")){
+		if(!strcmp(types_to_llvm(node->child->type), "double")){
+			printf("%%%d = fcmp une double %s, 0.000000e+00\n", temporary_var, node->child->value);
+		} else {
+			if(strcmp(types_to_llvm(node->child->type), "i32")){
+				convert_types(node->child, "i32");
+				printf("%%%d = icmp ne i32 %%%d, 0\n", temporary_var, temporary_var-1);
+			} else {
+				printf("%%%d = icmp ne i32 %s, 0\n", temporary_var, node->child->value);
+			}	
+		}
+		temporary_var++;
+	} else {
+		code_gen(node->child);
+		if(!strcmp(types_to_llvm(node->child->type), "double")){
+			printf("%%%d = fcmp une double %%%d, 0.000000e+00\n", temporary_var, temporary_var-1);
+		} else {
+			if(strcmp(types_to_llvm(node->child->type), "i32")){
+				convert_types(node->child, "i32");
+			}
+			printf("%%%d = icmp ne i32 %%%d, 0\n", temporary_var, temporary_var-1);
+		}
+		temporary_var++;
+	}
+	printf("br i1 %%%d, label %%andtrue%d, label %%andend%d\n", temporary_var-1, and_cmp-1, and_cmp-1);
+	//code_gen(node->child->brother);
+	printf("\nandtrue%d:\n", and_cmp-1);
+	if(!strcmp(node->child->brother->token, "Id")){
+		printf("%%%d = load %s, %s* ", temporary_var, types_to_llvm(node->child->brother->type), types_to_llvm(node->child->brother->type));
+		code_gen(node->child->brother);
+		printf("\n");
+		temporary_var++;
+		if(!strcmp(types_to_llvm(node->child->brother->type), "double")){
+			printf("%%%d = fcmp une double %%%d, 0.000000e+00\n", temporary_var, temporary_var-1);
+		} else {
+			if(strcmp(types_to_llvm(node->child->brother->type), "i32")){
+				convert_types(node->child->brother, "i32");
+			}
+			printf("%%%d = icmp ne i32 %%%d, 0\n", temporary_var, temporary_var-1);
+		}
+		temporary_var++;
+	} else if(!strcmp(node->child->brother->token, "IntLit") || !strcmp(node->child->brother->token, "ChrLit") || !strcmp(node->child->brother->token, "RealLit")){
+		if(!strcmp(types_to_llvm(node->child->brother->type), "double")){
+			printf("%%%d = fcmp une double %s, 0.000000e+00\n", temporary_var, node->child->brother->value);
+		} else {
+			if(strcmp(types_to_llvm(node->child->brother->type), "i32")){
+				convert_types(node->child->brother, "i32");
+				printf("%%%d = icmp ne i32 %%%d, 0\n", temporary_var, temporary_var-1);
+			} else {
+				printf("%%%d = icmp ne i32 %s, 0\n", temporary_var, node->child->brother->value);
+			}	
+		}
+		temporary_var++;
+	} else {
+		code_gen(node->child->brother);
+		if(!strcmp(types_to_llvm(node->child->brother->type), "double")){
+			printf("%%%d = fcmp une double %%%d, 0.000000e+00\n", temporary_var, temporary_var-1);
+		} else {
+			if(strcmp(types_to_llvm(node->child->brother->type), "i32")){
+				convert_types(node->child->brother, "i32");
+			}
+			printf("%%%d = icmp ne i32 %%%d, 0\n", temporary_var, temporary_var-1);
+		}
+		temporary_var++;
+	}
 	printf("br label %%andend%d\n", and_cmp-1);
-	printf("andend%d:\n", and_cmp-1);
-	printf("%%%d = phi[false, %%%d], [%%%d, %%andtrue%d]\n", temporary_var, start, temporary_var-1, and_cmp-1);
+	printf("\nandend%d:\n", and_cmp-1);
+	printf("%%%d = phi i1 [ false, %%andfalse%d ], [ %%%d, %%andtrue%d ]\n", temporary_var, and_cmp-1, temporary_var-1, and_cmp-1);
+	temporary_var++;
+	printf("%%%d = zext i1 %%%d to i32\n", temporary_var, temporary_var-1);
 	temporary_var++;
 }
 
 void bitwiseand_gen(Node *node){
-
+	int local_vars[2];
+	char *first_type = node->child->type;
+	char *second_type = node->child->brother->type;
+	char *result_type = types_to_llvm(node->type);
+	if(!strcmp(node->child->token, "Id")){
+		printf("%%%d = load %s, %s* ", temporary_var, types_to_llvm(first_type), types_to_llvm(first_type));
+		code_gen(node->child);
+		printf("\n");
+		local_vars[0] = temporary_var;
+		temporary_var++;
+		if(strcmp(types_to_llvm(first_type), result_type)){
+			convert_types(node->child, result_type);
+			local_vars[0] = temporary_var-1;
+		}
+	}
+	if(!strcmp(node->child->brother->token, "Id")){
+		printf("%%%d = load %s, %s* ", temporary_var, types_to_llvm(second_type), types_to_llvm(second_type));
+		code_gen(node->child->brother);
+		printf("\n");
+		local_vars[1] = temporary_var;
+		temporary_var++;
+		if(strcmp(types_to_llvm(second_type), result_type)){
+			convert_types(node->child->brother, result_type);
+			local_vars[1] = temporary_var-1;
+		}
+	}
+	if(!strcmp(node->child->token, "Id") || !strcmp(first_type, result_type)){ /* First is ID or different type */
+		if(!strcmp(node->child->brother->token, "Id") || !strcmp(second_type, result_type)){ /* First + Second is ID or different type*/
+			printf("%%%d = and %s %%%d, %%%d\n", temporary_var, result_type, local_vars[0], local_vars[1]);
+		} else {
+			printf("%%%d = and %s %%%d, ", temporary_var, result_type, local_vars[0]);
+			code_gen(node->child); 
+			printf("\n");
+		}
+	} else if(!strcmp(node->child->brother->token, "Id") || !strcmp(second_type, result_type)){  /* Second is ID */
+		printf("%%%d = and %s ", temporary_var, result_type);
+		code_gen(node->child); 
+		printf(", %%%d\n", local_vars[1]);
+	} else { /* None is ID */
+		printf("%%%d = and %s ", temporary_var, result_type);
+		code_gen(node->child);
+		printf(", ");
+		code_gen(node->child->brother);
+		printf("\n");
+	}
+	temporary_var++;
 }
 
 void bitwiseor_gen(Node *node){
-
+	int local_vars[2];
+	char *first_type = node->child->type;
+	char *second_type = node->child->brother->type;
+	char *result_type = types_to_llvm(node->type);
+	if(!strcmp(node->child->token, "Id")){
+		printf("%%%d = load %s, %s* ", temporary_var, types_to_llvm(first_type), types_to_llvm(first_type));
+		code_gen(node->child);
+		printf("\n");
+		local_vars[0] = temporary_var;
+		temporary_var++;
+		if(strcmp(types_to_llvm(first_type), result_type)){
+			convert_types(node->child, result_type);
+			local_vars[0] = temporary_var-1;
+		}
+	}
+	if(!strcmp(node->child->brother->token, "Id")){
+		printf("%%%d = load %s, %s* ", temporary_var, types_to_llvm(second_type), types_to_llvm(second_type));
+		code_gen(node->child->brother);
+		printf("\n");
+		local_vars[1] = temporary_var;
+		temporary_var++;
+		if(strcmp(types_to_llvm(second_type), result_type)){
+			convert_types(node->child->brother, result_type);
+			local_vars[1] = temporary_var-1;
+		}
+	}
+	if(!strcmp(node->child->token, "Id") || !strcmp(first_type, result_type)){ /* First is ID or different type */
+		if(!strcmp(node->child->brother->token, "Id") || !strcmp(second_type, result_type)){ /* First + Second is ID or different type*/
+			printf("%%%d = or %s %%%d, %%%d\n", temporary_var, result_type, local_vars[0], local_vars[1]);
+		} else {
+			printf("%%%d = or %s %%%d, ", temporary_var, result_type, local_vars[0]);
+			code_gen(node->child); 
+			printf("\n");
+		}
+	} else if(!strcmp(node->child->brother->token, "Id") || !strcmp(second_type, result_type)){  /* Second is ID */
+		printf("%%%d = or %s ", temporary_var, result_type);
+		code_gen(node->child); 
+		printf(", %%%d\n", local_vars[1]);
+	} else { /* None is ID */
+		printf("%%%d = or %s ", temporary_var, result_type);
+		code_gen(node->child);
+		printf(", ");
+		code_gen(node->child->brother);
+		printf("\n");
+	}
+	temporary_var++;
 }
 
 void bitwisexor_gen(Node *node){
-
+	int local_vars[2];
+	char *first_type = node->child->type;
+	char *second_type = node->child->brother->type;
+	char *result_type = types_to_llvm(node->type);
+	if(!strcmp(node->child->token, "Id")){
+		printf("%%%d = load %s, %s* ", temporary_var, types_to_llvm(first_type), types_to_llvm(first_type));
+		code_gen(node->child);
+		printf("\n");
+		local_vars[0] = temporary_var;
+		temporary_var++;
+		if(strcmp(types_to_llvm(first_type), result_type)){
+			convert_types(node->child, result_type);
+			local_vars[0] = temporary_var-1;
+		}
+	}
+	if(!strcmp(node->child->brother->token, "Id")){
+		printf("%%%d = load %s, %s* ", temporary_var, types_to_llvm(second_type), types_to_llvm(second_type));
+		code_gen(node->child->brother);
+		printf("\n");
+		local_vars[1] = temporary_var;
+		temporary_var++;
+		if(strcmp(types_to_llvm(second_type), result_type)){
+			convert_types(node->child->brother, result_type);
+			local_vars[1] = temporary_var-1;
+		}
+	}
+	if(!strcmp(node->child->token, "Id") || !strcmp(first_type, result_type)){ /* First is ID or different type */
+		if(!strcmp(node->child->brother->token, "Id") || !strcmp(second_type, result_type)){ /* First + Second is ID or different type*/
+			printf("%%%d = xor %s %%%d, %%%d\n", temporary_var, result_type, local_vars[0], local_vars[1]);
+		} else {
+			printf("%%%d = xor %s %%%d, ", temporary_var, result_type, local_vars[0]);
+			code_gen(node->child); 
+			printf("\n");
+		}
+	} else if(!strcmp(node->child->brother->token, "Id") || !strcmp(second_type, result_type)){  /* Second is ID */
+		printf("%%%d = xor %s ", temporary_var, result_type);
+		code_gen(node->child); 
+		printf(", %%%d\n", local_vars[1]);
+	} else { /* None is ID */
+		printf("%%%d = xor %s ", temporary_var, result_type);
+		code_gen(node->child);
+		printf(", ");
+		code_gen(node->child->brother);
+		printf("\n");
+	}
+	temporary_var++;
 }
 
 void eq_gen(Node *node){
@@ -731,7 +1117,10 @@ void eq_gen(Node *node){
 				printf("\n");
 				local_vars[1] = temporary_var;
 				temporary_var++;
-			} 
+			} else if(is_expression(node->child->brother)){
+				code_gen(node->child->brother);
+				local_vars[1] = temporary_var-1;
+			}
 			type = strdup(first_type);
 			convert_types(node->child->brother, first_type);
 			local_vars[1] = temporary_var-1;
@@ -741,7 +1130,10 @@ void eq_gen(Node *node){
 				printf("\n");
 				local_vars[0] = temporary_var;
 				temporary_var++;
-			} 
+			} else if(is_expression(node->child)){
+				code_gen(node->child);
+				local_vars[0] = temporary_var-1;
+			}
 		} else {
 			if(!strcmp(node->child->token, "Id")){
 				printf("%%%d = load %s, %s* ", temporary_var, first_type, first_type);
@@ -749,7 +1141,10 @@ void eq_gen(Node *node){
 				printf("\n");
 				local_vars[0] = temporary_var;
 				temporary_var++;
-			} 
+			} else if(is_expression(node->child)){
+				code_gen(node->child);
+				local_vars[0] = temporary_var-1;
+			}
 			type = strdup(second_type);
 			convert_types(node->child, second_type);
 			local_vars[0] = temporary_var-1;
@@ -759,17 +1154,20 @@ void eq_gen(Node *node){
 				printf("\n");
 				local_vars[1] = temporary_var;
 				temporary_var++;
-			} 
+			} else if(is_expression(node->child->brother)){
+				code_gen(node->child->brother);
+				local_vars[1] = temporary_var-1;
+			}
 		}
 		if(!strcmp(type, "double")){
 			if(greater == 1){
-				if(!strcmp(node->child->token, "Id")){
+				if(!strcmp(node->child->token, "Id") || is_expression(node->child)){
 					printf("%%%d = fcmp oeq double %%%d, %%%d\n", temporary_var, local_vars[0], local_vars[1]);
 				} else { /* Is another terminal */
 					printf("%%%d = fcmp oeq double %s, %%%d\n", temporary_var, node->child->value, local_vars[1]);
 				}
 			} else {
-				if(!strcmp(node->child->brother->token, "Id")){
+				if(!strcmp(node->child->brother->token, "Id") || is_expression(node->child->brother)){
 					printf("%%%d = fcmp oeq double %%%d, %%%d\n", temporary_var, local_vars[0], local_vars[1]);
 				} else { /* Is another terminal */
 					printf("%%%d = fcmp oeq double %%%d, %s\n", temporary_var, local_vars[0], node->child->brother->value);
@@ -777,13 +1175,13 @@ void eq_gen(Node *node){
 			}
 		} else {
 			if(greater == 1){
-				if(!strcmp(node->child->token, "Id")){
+				if(!strcmp(node->child->token, "Id") || is_expression(node->child)){
 					printf("%%%d = icmp eq %s %%%d, %%%d\n", temporary_var, type, local_vars[0], local_vars[1]);
 				} else { /* Is another terminal */
 					printf("%%%d = icmp eq %s %s, %%%d\n", temporary_var, type, node->child->value, local_vars[1]);
 				}
 			} else {
-				if(!strcmp(node->child->brother->token, "Id")){
+				if(!strcmp(node->child->brother->token, "Id") || is_expression(node->child->brother)){
 					printf("%%%d = icmp eq %s %%%d, %%%d\n", temporary_var, type, local_vars[0], local_vars[1]);
 				} else { /* Is another terminal */
 					printf("%%%d = icmp eq %s %%%d, %s\n", temporary_var, type, local_vars[0], node->child->brother->value);
@@ -792,27 +1190,47 @@ void eq_gen(Node *node){
 		}
 		temporary_var++;
 	} else {
+		if(!strcmp(node->child->token, "Id")){
+			printf("%%%d = load %s, %s* ", temporary_var, first_type, first_type);
+			code_gen(node->child);
+			printf("\n");
+			local_vars[0] = temporary_var;
+			temporary_var++;
+		} else if(is_expression(node->child)){
+			code_gen(node->child);
+			local_vars[0] = temporary_var-1;
+		}
+		if(!strcmp(node->child->brother->token, "Id")){
+			printf("%%%d = load %s, %s* ", temporary_var, second_type, second_type);
+			code_gen(node->child->brother);
+			printf("\n");
+			local_vars[1] = temporary_var;
+			temporary_var++;
+		} else if(is_expression(node->child->brother)){
+			code_gen(node->child->brother);
+			local_vars[1] = temporary_var-1;
+		}
 		if(!strcmp(type, "double")) {
-			if(!strcmp(node->child->token, "Id")){
-				if(!strcmp(node->child->brother->token, "Id")){  /* First and Second are ID */
+			if(!strcmp(node->child->token, "Id") || is_expression(node->child)){
+				if(!strcmp(node->child->brother->token, "Id") || is_expression(node->child->brother)){  /* First and Second are ID */
 					printf("%%%d = fcmp oeq double %%%d, %%%d\n", temporary_var, local_vars[0], local_vars[1]);
 				} else { /* First is ID */
 					printf("%%%d = fcmp oeq double %%%d, %s\n", temporary_var, local_vars[0], node->child->brother->value);
 				}
-			} else if(!strcmp(node->child->brother->token, "Id")){ /* Second is ID */
+			} else if(!strcmp(node->child->brother->token, "Id") || is_expression(node->child->brother)){ /* Second is ID */
 				printf("%%%d = fcmp oeq double %s, %%%d\n", temporary_var, node->child->value, local_vars[1]);
 			} else {
 				printf("%%%d = fcmp oeq double %s, %s\n", temporary_var, node->child->value, node->child->brother->value);
 			}
 		} else {
-			if(!strcmp(node->child->token, "Id")){
-				if(!strcmp(node->child->brother->token, "Id")){  /* First and Second are ID */
+			if(!strcmp(node->child->token, "Id") || is_expression(node->child)){
+				if(!strcmp(node->child->brother->token, "Id") || is_expression(node->child->brother)){  /* First and Second are ID */
 					printf("%%%d = icmp eq %s %%%d, %%%d\n", temporary_var, type, local_vars[0], local_vars[1]);
 				} else { /* First is ID */
-					printf("%%%d = icmp eq %s %%%d, %s\n", temporary_var, type, local_vars[0], node->child->brother->value);
+					printf("%%%d = icmp eq double %%%d, %s\n", temporary_var, local_vars[0], node->child->brother->value);
 				}
-			} else if(!strcmp(node->child->brother->token, "Id")){ /* Second is ID */
-				printf("%%%d = icmp eq %s %s, %%%d\n", temporary_var, type, node->child->value, local_vars[1]);
+			} else if(!strcmp(node->child->brother->token, "Id") || is_expression(node->child->brother)){ /* Second is ID */
+				printf("%%%d = icmp eq double %s, %%%d\n", temporary_var, node->child->value, local_vars[1]);
 			} else {
 				printf("%%%d = icmp eq %s %s, %s\n", temporary_var, type, node->child->value, node->child->brother->value);
 			}
@@ -820,7 +1238,7 @@ void eq_gen(Node *node){
 		temporary_var++;
 	}	
 	printf("%%%d = zext i1 %%%d to i32\n", temporary_var, temporary_var-1);
-	temporary_var++;		
+	temporary_var++;
 }
 
 void ne_gen(Node *node){
@@ -837,7 +1255,10 @@ void ne_gen(Node *node){
 				printf("\n");
 				local_vars[1] = temporary_var;
 				temporary_var++;
-			} 
+			} else if(is_expression(node->child->brother)){
+				code_gen(node->child->brother);
+				local_vars[1] = temporary_var-1;
+			}
 			type = strdup(first_type);
 			convert_types(node->child->brother, first_type);
 			local_vars[1] = temporary_var-1;
@@ -847,7 +1268,10 @@ void ne_gen(Node *node){
 				printf("\n");
 				local_vars[0] = temporary_var;
 				temporary_var++;
-			} 
+			} else if(is_expression(node->child)){
+				code_gen(node->child);
+				local_vars[0] = temporary_var-1;
+			}
 		} else {
 			if(!strcmp(node->child->token, "Id")){
 				printf("%%%d = load %s, %s* ", temporary_var, first_type, first_type);
@@ -855,7 +1279,10 @@ void ne_gen(Node *node){
 				printf("\n");
 				local_vars[0] = temporary_var;
 				temporary_var++;
-			} 
+			} else if(is_expression(node->child)){
+				code_gen(node->child);
+				local_vars[0] = temporary_var-1;
+			}
 			type = strdup(second_type);
 			convert_types(node->child, second_type);
 			local_vars[0] = temporary_var-1;
@@ -865,17 +1292,20 @@ void ne_gen(Node *node){
 				printf("\n");
 				local_vars[1] = temporary_var;
 				temporary_var++;
-			} 
+			} else if(is_expression(node->child->brother)){
+				code_gen(node->child->brother);
+				local_vars[1] = temporary_var-1;
+			}
 		}
 		if(!strcmp(type, "double")){
 			if(greater == 1){
-				if(!strcmp(node->child->token, "Id")){
+				if(!strcmp(node->child->token, "Id") || is_expression(node->child)){
 					printf("%%%d = fcmp une double %%%d, %%%d\n", temporary_var, local_vars[0], local_vars[1]);
 				} else { /* Is another terminal */
 					printf("%%%d = fcmp une double %s, %%%d\n", temporary_var, node->child->value, local_vars[1]);
 				}
 			} else {
-				if(!strcmp(node->child->brother->token, "Id")){
+				if(!strcmp(node->child->brother->token, "Id") || is_expression(node->child->brother)){
 					printf("%%%d = fcmp une double %%%d, %%%d\n", temporary_var, local_vars[0], local_vars[1]);
 				} else { /* Is another terminal */
 					printf("%%%d = fcmp une double %%%d, %s\n", temporary_var, local_vars[0], node->child->brother->value);
@@ -883,13 +1313,13 @@ void ne_gen(Node *node){
 			}
 		} else {
 			if(greater == 1){
-				if(!strcmp(node->child->token, "Id")){
+				if(!strcmp(node->child->token, "Id") || is_expression(node->child)){
 					printf("%%%d = icmp ne %s %%%d, %%%d\n", temporary_var, type, local_vars[0], local_vars[1]);
 				} else { /* Is another terminal */
 					printf("%%%d = icmp ne %s %s, %%%d\n", temporary_var, type, node->child->value, local_vars[1]);
 				}
 			} else {
-				if(!strcmp(node->child->brother->token, "Id")){
+				if(!strcmp(node->child->brother->token, "Id") || is_expression(node->child->brother)){
 					printf("%%%d = icmp ne %s %%%d, %%%d\n", temporary_var, type, local_vars[0], local_vars[1]);
 				} else { /* Is another terminal */
 					printf("%%%d = icmp ne %s %%%d, %s\n", temporary_var, type, local_vars[0], node->child->brother->value);
@@ -898,27 +1328,47 @@ void ne_gen(Node *node){
 		}
 		temporary_var++;
 	} else {
+		if(!strcmp(node->child->token, "Id")){
+			printf("%%%d = load %s, %s* ", temporary_var, first_type, first_type);
+			code_gen(node->child);
+			printf("\n");
+			local_vars[0] = temporary_var;
+			temporary_var++;
+		} else if(is_expression(node->child)){
+			code_gen(node->child);
+			local_vars[0] = temporary_var-1;
+		}
+		if(!strcmp(node->child->brother->token, "Id")){
+			printf("%%%d = load %s, %s* ", temporary_var, second_type, second_type);
+			code_gen(node->child->brother);
+			printf("\n");
+			local_vars[1] = temporary_var;
+			temporary_var++;
+		} else if(is_expression(node->child->brother)){
+			code_gen(node->child->brother);
+			local_vars[1] = temporary_var-1;
+		}
 		if(!strcmp(type, "double")) {
-			if(!strcmp(node->child->token, "Id")){
-				if(!strcmp(node->child->brother->token, "Id")){  /* First and Second are ID */
+			if(!strcmp(node->child->token, "Id") || is_expression(node->child)){
+				if(!strcmp(node->child->brother->token, "Id") || is_expression(node->child->brother)){  /* First and Second are ID */
 					printf("%%%d = fcmp une double %%%d, %%%d\n", temporary_var, local_vars[0], local_vars[1]);
 				} else { /* First is ID */
 					printf("%%%d = fcmp une double %%%d, %s\n", temporary_var, local_vars[0], node->child->brother->value);
 				}
-			} else if(!strcmp(node->child->brother->token, "Id")){ /* Second is ID */
+			} else if(!strcmp(node->child->brother->token, "Id") || is_expression(node->child->brother)){ /* Second is ID */
 				printf("%%%d = fcmp une double %s, %%%d\n", temporary_var, node->child->value, local_vars[1]);
 			} else {
 				printf("%%%d = fcmp une double %s, %s\n", temporary_var, node->child->value, node->child->brother->value);
 			}
 		} else {
-			if(!strcmp(node->child->token, "Id")){
-				if(!strcmp(node->child->brother->token, "Id")){  /* First and Second are ID */
+			if(!strcmp(node->child->token, "Id") || is_expression(node->child)){
+				if(!strcmp(node->child->brother->token, "Id") || is_expression(node->child->brother)){  /* First and Second are ID */
 					printf("%%%d = icmp ne %s %%%d, %%%d\n", temporary_var, type, local_vars[0], local_vars[1]);
 				} else { /* First is ID */
-					printf("%%%d = icmp ne %s %%%d, %s\n", temporary_var, type, local_vars[0], node->child->brother->value);
+					printf("%%%d = icmp ne double %%%d, %s\n", temporary_var, local_vars[0], node->child->brother->value);
 				}
-			} else if(!strcmp(node->child->brother->token, "Id")){ /* Second is ID */
-				printf("%%%d = icmp ne %s %s, %%%d\n", temporary_var, type, node->child->value, local_vars[1]);
+			} else if(!strcmp(node->child->brother->token, "Id") || is_expression(node->child->brother)){ /* Second is ID */
+				printf("%%%d = icmp ne double %s, %%%d\n", temporary_var, node->child->value, local_vars[1]);
 			} else {
 				printf("%%%d = icmp ne %s %s, %s\n", temporary_var, type, node->child->value, node->child->brother->value);
 			}
@@ -926,7 +1376,7 @@ void ne_gen(Node *node){
 		temporary_var++;
 	}	
 	printf("%%%d = zext i1 %%%d to i32\n", temporary_var, temporary_var-1);
-	temporary_var++;	
+	temporary_var++;
 }
 
 void le_gen(Node *node){
@@ -943,7 +1393,10 @@ void le_gen(Node *node){
 				printf("\n");
 				local_vars[1] = temporary_var;
 				temporary_var++;
-			} 
+			} else if(is_expression(node->child->brother)){
+				code_gen(node->child->brother);
+				local_vars[1] = temporary_var-1;
+			}
 			type = strdup(first_type);
 			convert_types(node->child->brother, first_type);
 			local_vars[1] = temporary_var-1;
@@ -953,7 +1406,10 @@ void le_gen(Node *node){
 				printf("\n");
 				local_vars[0] = temporary_var;
 				temporary_var++;
-			} 
+			} else if(is_expression(node->child)){
+				code_gen(node->child);
+				local_vars[0] = temporary_var-1;
+			}
 		} else {
 			if(!strcmp(node->child->token, "Id")){
 				printf("%%%d = load %s, %s* ", temporary_var, first_type, first_type);
@@ -961,7 +1417,10 @@ void le_gen(Node *node){
 				printf("\n");
 				local_vars[0] = temporary_var;
 				temporary_var++;
-			} 
+			} else if(is_expression(node->child)){
+				code_gen(node->child);
+				local_vars[0] = temporary_var-1;
+			}
 			type = strdup(second_type);
 			convert_types(node->child, second_type);
 			local_vars[0] = temporary_var-1;
@@ -971,17 +1430,20 @@ void le_gen(Node *node){
 				printf("\n");
 				local_vars[1] = temporary_var;
 				temporary_var++;
-			} 
+			} else if(is_expression(node->child->brother)){
+				code_gen(node->child->brother);
+				local_vars[1] = temporary_var-1;
+			}
 		}
 		if(!strcmp(type, "double")){
 			if(greater == 1){
-				if(!strcmp(node->child->token, "Id")){
+				if(!strcmp(node->child->token, "Id") || is_expression(node->child)){
 					printf("%%%d = fcmp ole double %%%d, %%%d\n", temporary_var, local_vars[0], local_vars[1]);
 				} else { /* Is another terminal */
 					printf("%%%d = fcmp ole double %s, %%%d\n", temporary_var, node->child->value, local_vars[1]);
 				}
 			} else {
-				if(!strcmp(node->child->brother->token, "Id")){
+				if(!strcmp(node->child->brother->token, "Id") || is_expression(node->child->brother)){
 					printf("%%%d = fcmp ole double %%%d, %%%d\n", temporary_var, local_vars[0], local_vars[1]);
 				} else { /* Is another terminal */
 					printf("%%%d = fcmp ole double %%%d, %s\n", temporary_var, local_vars[0], node->child->brother->value);
@@ -989,13 +1451,13 @@ void le_gen(Node *node){
 			}
 		} else {
 			if(greater == 1){
-				if(!strcmp(node->child->token, "Id")){
+				if(!strcmp(node->child->token, "Id") || is_expression(node->child)){
 					printf("%%%d = icmp sle %s %%%d, %%%d\n", temporary_var, type, local_vars[0], local_vars[1]);
 				} else { /* Is another terminal */
 					printf("%%%d = icmp sle %s %s, %%%d\n", temporary_var, type, node->child->value, local_vars[1]);
 				}
 			} else {
-				if(!strcmp(node->child->brother->token, "Id")){
+				if(!strcmp(node->child->brother->token, "Id") || is_expression(node->child->brother)){
 					printf("%%%d = icmp sle %s %%%d, %%%d\n", temporary_var, type, local_vars[0], local_vars[1]);
 				} else { /* Is another terminal */
 					printf("%%%d = icmp sle %s %%%d, %s\n", temporary_var, type, local_vars[0], node->child->brother->value);
@@ -1004,27 +1466,47 @@ void le_gen(Node *node){
 		}
 		temporary_var++;
 	} else {
+		if(!strcmp(node->child->token, "Id")){
+			printf("%%%d = load %s, %s* ", temporary_var, first_type, first_type);
+			code_gen(node->child);
+			printf("\n");
+			local_vars[0] = temporary_var;
+			temporary_var++;
+		} else if(is_expression(node->child)){
+			code_gen(node->child);
+			local_vars[0] = temporary_var-1;
+		}
+		if(!strcmp(node->child->brother->token, "Id")){
+			printf("%%%d = load %s, %s* ", temporary_var, second_type, second_type);
+			code_gen(node->child->brother);
+			printf("\n");
+			local_vars[1] = temporary_var;
+			temporary_var++;
+		} else if(is_expression(node->child->brother)){
+			code_gen(node->child->brother);
+			local_vars[1] = temporary_var-1;
+		}
 		if(!strcmp(type, "double")) {
-			if(!strcmp(node->child->token, "Id")){
-				if(!strcmp(node->child->brother->token, "Id")){  /* First and Second are ID */
+			if(!strcmp(node->child->token, "Id") || is_expression(node->child)){
+				if(!strcmp(node->child->brother->token, "Id") || is_expression(node->child->brother)){  /* First and Second are ID */
 					printf("%%%d = fcmp ole double %%%d, %%%d\n", temporary_var, local_vars[0], local_vars[1]);
 				} else { /* First is ID */
 					printf("%%%d = fcmp ole double %%%d, %s\n", temporary_var, local_vars[0], node->child->brother->value);
 				}
-			} else if(!strcmp(node->child->brother->token, "Id")){ /* Second is ID */
+			} else if(!strcmp(node->child->brother->token, "Id") || is_expression(node->child->brother)){ /* Second is ID */
 				printf("%%%d = fcmp ole double %s, %%%d\n", temporary_var, node->child->value, local_vars[1]);
 			} else {
 				printf("%%%d = fcmp ole double %s, %s\n", temporary_var, node->child->value, node->child->brother->value);
 			}
 		} else {
-			if(!strcmp(node->child->token, "Id")){
-				if(!strcmp(node->child->brother->token, "Id")){  /* First and Second are ID */
+			if(!strcmp(node->child->token, "Id") || is_expression(node->child)){
+				if(!strcmp(node->child->brother->token, "Id") || is_expression(node->child->brother)){  /* First and Second are ID */
 					printf("%%%d = icmp sle %s %%%d, %%%d\n", temporary_var, type, local_vars[0], local_vars[1]);
 				} else { /* First is ID */
-					printf("%%%d = icmp sle %s %%%d, %s\n", temporary_var, type, local_vars[0], node->child->brother->value);
+					printf("%%%d = icmp sle double %%%d, %s\n", temporary_var, local_vars[0], node->child->brother->value);
 				}
-			} else if(!strcmp(node->child->brother->token, "Id")){ /* Second is ID */
-				printf("%%%d = icmp sle %s %s, %%%d\n", temporary_var, type, node->child->value, local_vars[1]);
+			} else if(!strcmp(node->child->brother->token, "Id") || is_expression(node->child->brother)){ /* Second is ID */
+				printf("%%%d = icmp sle double %s, %%%d\n", temporary_var, node->child->value, local_vars[1]);
 			} else {
 				printf("%%%d = icmp sle %s %s, %s\n", temporary_var, type, node->child->value, node->child->brother->value);
 			}
@@ -1049,7 +1531,10 @@ void ge_gen(Node *node){
 				printf("\n");
 				local_vars[1] = temporary_var;
 				temporary_var++;
-			} 
+			} else if(is_expression(node->child->brother)){
+				code_gen(node->child->brother);
+				local_vars[1] = temporary_var-1;
+			}
 			type = strdup(first_type);
 			convert_types(node->child->brother, first_type);
 			local_vars[1] = temporary_var-1;
@@ -1059,7 +1544,10 @@ void ge_gen(Node *node){
 				printf("\n");
 				local_vars[0] = temporary_var;
 				temporary_var++;
-			} 
+			} else if(is_expression(node->child)){
+				code_gen(node->child);
+				local_vars[0] = temporary_var-1;
+			}
 		} else {
 			if(!strcmp(node->child->token, "Id")){
 				printf("%%%d = load %s, %s* ", temporary_var, first_type, first_type);
@@ -1067,7 +1555,10 @@ void ge_gen(Node *node){
 				printf("\n");
 				local_vars[0] = temporary_var;
 				temporary_var++;
-			} 
+			} else if(is_expression(node->child)){
+				code_gen(node->child);
+				local_vars[0] = temporary_var-1;
+			}
 			type = strdup(second_type);
 			convert_types(node->child, second_type);
 			local_vars[0] = temporary_var-1;
@@ -1077,17 +1568,20 @@ void ge_gen(Node *node){
 				printf("\n");
 				local_vars[1] = temporary_var;
 				temporary_var++;
-			} 
+			} else if(is_expression(node->child->brother)){
+				code_gen(node->child->brother);
+				local_vars[1] = temporary_var-1;
+			}
 		}
 		if(!strcmp(type, "double")){
 			if(greater == 1){
-				if(!strcmp(node->child->token, "Id")){
+				if(!strcmp(node->child->token, "Id") || is_expression(node->child)){
 					printf("%%%d = fcmp oge double %%%d, %%%d\n", temporary_var, local_vars[0], local_vars[1]);
 				} else { /* Is another terminal */
 					printf("%%%d = fcmp oge double %s, %%%d\n", temporary_var, node->child->value, local_vars[1]);
 				}
 			} else {
-				if(!strcmp(node->child->brother->token, "Id")){
+				if(!strcmp(node->child->brother->token, "Id") || is_expression(node->child->brother)){
 					printf("%%%d = fcmp oge double %%%d, %%%d\n", temporary_var, local_vars[0], local_vars[1]);
 				} else { /* Is another terminal */
 					printf("%%%d = fcmp oge double %%%d, %s\n", temporary_var, local_vars[0], node->child->brother->value);
@@ -1095,13 +1589,13 @@ void ge_gen(Node *node){
 			}
 		} else {
 			if(greater == 1){
-				if(!strcmp(node->child->token, "Id")){
+				if(!strcmp(node->child->token, "Id") || is_expression(node->child)){
 					printf("%%%d = icmp sge %s %%%d, %%%d\n", temporary_var, type, local_vars[0], local_vars[1]);
 				} else { /* Is another terminal */
 					printf("%%%d = icmp sge %s %s, %%%d\n", temporary_var, type, node->child->value, local_vars[1]);
 				}
 			} else {
-				if(!strcmp(node->child->brother->token, "Id")){
+				if(!strcmp(node->child->brother->token, "Id") || is_expression(node->child->brother)){
 					printf("%%%d = icmp sge %s %%%d, %%%d\n", temporary_var, type, local_vars[0], local_vars[1]);
 				} else { /* Is another terminal */
 					printf("%%%d = icmp sge %s %%%d, %s\n", temporary_var, type, local_vars[0], node->child->brother->value);
@@ -1110,27 +1604,47 @@ void ge_gen(Node *node){
 		}
 		temporary_var++;
 	} else {
+		if(!strcmp(node->child->token, "Id")){
+			printf("%%%d = load %s, %s* ", temporary_var, first_type, first_type);
+			code_gen(node->child);
+			printf("\n");
+			local_vars[0] = temporary_var;
+			temporary_var++;
+		} else if(is_expression(node->child)){
+			code_gen(node->child);
+			local_vars[0] = temporary_var-1;
+		}
+		if(!strcmp(node->child->brother->token, "Id")){
+			printf("%%%d = load %s, %s* ", temporary_var, second_type, second_type);
+			code_gen(node->child->brother);
+			printf("\n");
+			local_vars[1] = temporary_var;
+			temporary_var++;
+		} else if(is_expression(node->child->brother)){
+			code_gen(node->child->brother);
+			local_vars[1] = temporary_var-1;
+		}
 		if(!strcmp(type, "double")) {
-			if(!strcmp(node->child->token, "Id")){
-				if(!strcmp(node->child->brother->token, "Id")){  /* First and Second are ID */
+			if(!strcmp(node->child->token, "Id") || is_expression(node->child)){
+				if(!strcmp(node->child->brother->token, "Id") || is_expression(node->child->brother)){  /* First and Second are ID */
 					printf("%%%d = fcmp oge double %%%d, %%%d\n", temporary_var, local_vars[0], local_vars[1]);
 				} else { /* First is ID */
 					printf("%%%d = fcmp oge double %%%d, %s\n", temporary_var, local_vars[0], node->child->brother->value);
 				}
-			} else if(!strcmp(node->child->brother->token, "Id")){ /* Second is ID */
+			} else if(!strcmp(node->child->brother->token, "Id") || is_expression(node->child->brother)){ /* Second is ID */
 				printf("%%%d = fcmp oge double %s, %%%d\n", temporary_var, node->child->value, local_vars[1]);
 			} else {
 				printf("%%%d = fcmp oge double %s, %s\n", temporary_var, node->child->value, node->child->brother->value);
 			}
 		} else {
-			if(!strcmp(node->child->token, "Id")){
-				if(!strcmp(node->child->brother->token, "Id")){  /* First and Second are ID */
+			if(!strcmp(node->child->token, "Id") || is_expression(node->child)){
+				if(!strcmp(node->child->brother->token, "Id") || is_expression(node->child->brother)){  /* First and Second are ID */
 					printf("%%%d = icmp sge %s %%%d, %%%d\n", temporary_var, type, local_vars[0], local_vars[1]);
 				} else { /* First is ID */
-					printf("%%%d = icmp sge %s %%%d, %s\n", temporary_var, type, local_vars[0], node->child->brother->value);
+					printf("%%%d = icmp sge double %%%d, %s\n", temporary_var, local_vars[0], node->child->brother->value);
 				}
-			} else if(!strcmp(node->child->brother->token, "Id")){ /* Second is ID */
-				printf("%%%d = icmp sge %s %s, %%%d\n", temporary_var, type, node->child->value, local_vars[1]);
+			} else if(!strcmp(node->child->brother->token, "Id") || is_expression(node->child->brother)){ /* Second is ID */
+				printf("%%%d = icmp sge double %s, %%%d\n", temporary_var, node->child->value, local_vars[1]);
 			} else {
 				printf("%%%d = icmp sge %s %s, %s\n", temporary_var, type, node->child->value, node->child->brother->value);
 			}
@@ -1155,7 +1669,10 @@ void lt_gen(Node *node){
 				printf("\n");
 				local_vars[1] = temporary_var;
 				temporary_var++;
-			} 
+			} else if(is_expression(node->child->brother)){
+				code_gen(node->child->brother);
+				local_vars[1] = temporary_var-1;
+			}
 			type = strdup(first_type);
 			convert_types(node->child->brother, first_type);
 			local_vars[1] = temporary_var-1;
@@ -1165,7 +1682,10 @@ void lt_gen(Node *node){
 				printf("\n");
 				local_vars[0] = temporary_var;
 				temporary_var++;
-			} 
+			} else if(is_expression(node->child)){
+				code_gen(node->child);
+				local_vars[0] = temporary_var-1;
+			}
 		} else {
 			if(!strcmp(node->child->token, "Id")){
 				printf("%%%d = load %s, %s* ", temporary_var, first_type, first_type);
@@ -1173,7 +1693,10 @@ void lt_gen(Node *node){
 				printf("\n");
 				local_vars[0] = temporary_var;
 				temporary_var++;
-			} 
+			} else if(is_expression(node->child)){
+				code_gen(node->child);
+				local_vars[0] = temporary_var-1;
+			}
 			type = strdup(second_type);
 			convert_types(node->child, second_type);
 			local_vars[0] = temporary_var-1;
@@ -1183,17 +1706,20 @@ void lt_gen(Node *node){
 				printf("\n");
 				local_vars[1] = temporary_var;
 				temporary_var++;
-			} 
+			} else if(is_expression(node->child->brother)){
+				code_gen(node->child->brother);
+				local_vars[1] = temporary_var-1;
+			}
 		}
 		if(!strcmp(type, "double")){
 			if(greater == 1){
-				if(!strcmp(node->child->token, "Id")){
+				if(!strcmp(node->child->token, "Id") || is_expression(node->child)){
 					printf("%%%d = fcmp olt double %%%d, %%%d\n", temporary_var, local_vars[0], local_vars[1]);
 				} else { /* Is another terminal */
 					printf("%%%d = fcmp olt double %s, %%%d\n", temporary_var, node->child->value, local_vars[1]);
 				}
 			} else {
-				if(!strcmp(node->child->brother->token, "Id")){
+				if(!strcmp(node->child->brother->token, "Id") || is_expression(node->child->brother)){
 					printf("%%%d = fcmp olt double %%%d, %%%d\n", temporary_var, local_vars[0], local_vars[1]);
 				} else { /* Is another terminal */
 					printf("%%%d = fcmp olt double %%%d, %s\n", temporary_var, local_vars[0], node->child->brother->value);
@@ -1201,13 +1727,13 @@ void lt_gen(Node *node){
 			}
 		} else {
 			if(greater == 1){
-				if(!strcmp(node->child->token, "Id")){
+				if(!strcmp(node->child->token, "Id") || is_expression(node->child)){
 					printf("%%%d = icmp slt %s %%%d, %%%d\n", temporary_var, type, local_vars[0], local_vars[1]);
 				} else { /* Is another terminal */
 					printf("%%%d = icmp slt %s %s, %%%d\n", temporary_var, type, node->child->value, local_vars[1]);
 				}
 			} else {
-				if(!strcmp(node->child->brother->token, "Id")){
+				if(!strcmp(node->child->brother->token, "Id") || is_expression(node->child->brother)){
 					printf("%%%d = icmp slt %s %%%d, %%%d\n", temporary_var, type, local_vars[0], local_vars[1]);
 				} else { /* Is another terminal */
 					printf("%%%d = icmp slt %s %%%d, %s\n", temporary_var, type, local_vars[0], node->child->brother->value);
@@ -1216,27 +1742,47 @@ void lt_gen(Node *node){
 		}
 		temporary_var++;
 	} else {
+		if(!strcmp(node->child->token, "Id")){
+			printf("%%%d = load %s, %s* ", temporary_var, first_type, first_type);
+			code_gen(node->child);
+			printf("\n");
+			local_vars[0] = temporary_var;
+			temporary_var++;
+		} else if(is_expression(node->child)){
+			code_gen(node->child);
+			local_vars[0] = temporary_var-1;
+		}
+		if(!strcmp(node->child->brother->token, "Id")){
+			printf("%%%d = load %s, %s* ", temporary_var, second_type, second_type);
+			code_gen(node->child->brother);
+			printf("\n");
+			local_vars[1] = temporary_var;
+			temporary_var++;
+		} else if(is_expression(node->child->brother)){
+			code_gen(node->child->brother);
+			local_vars[1] = temporary_var-1;
+		}
 		if(!strcmp(type, "double")) {
-			if(!strcmp(node->child->token, "Id")){
-				if(!strcmp(node->child->brother->token, "Id")){  /* First and Second are ID */
+			if(!strcmp(node->child->token, "Id") || is_expression(node->child)){
+				if(!strcmp(node->child->brother->token, "Id") || is_expression(node->child->brother)){  /* First and Second are ID */
 					printf("%%%d = fcmp olt double %%%d, %%%d\n", temporary_var, local_vars[0], local_vars[1]);
 				} else { /* First is ID */
 					printf("%%%d = fcmp olt double %%%d, %s\n", temporary_var, local_vars[0], node->child->brother->value);
 				}
-			} else if(!strcmp(node->child->brother->token, "Id")){ /* Second is ID */
+			} else if(!strcmp(node->child->brother->token, "Id") || is_expression(node->child->brother)){ /* Second is ID */
 				printf("%%%d = fcmp olt double %s, %%%d\n", temporary_var, node->child->value, local_vars[1]);
 			} else {
 				printf("%%%d = fcmp olt double %s, %s\n", temporary_var, node->child->value, node->child->brother->value);
 			}
 		} else {
-			if(!strcmp(node->child->token, "Id")){
-				if(!strcmp(node->child->brother->token, "Id")){  /* First and Second are ID */
+			if(!strcmp(node->child->token, "Id") || is_expression(node->child)){
+				if(!strcmp(node->child->brother->token, "Id") || is_expression(node->child->brother)){  /* First and Second are ID */
 					printf("%%%d = icmp slt %s %%%d, %%%d\n", temporary_var, type, local_vars[0], local_vars[1]);
 				} else { /* First is ID */
-					printf("%%%d = icmp slt %s %%%d, %s\n", temporary_var, type, local_vars[0], node->child->brother->value);
+					printf("%%%d = icmp slt double %%%d, %s\n", temporary_var, local_vars[0], node->child->brother->value);
 				}
-			} else if(!strcmp(node->child->brother->token, "Id")){ /* Second is ID */
-				printf("%%%d = icmp slt %s %s, %%%d\n", temporary_var, type, node->child->value, local_vars[1]);
+			} else if(!strcmp(node->child->brother->token, "Id") || is_expression(node->child->brother)){ /* Second is ID */
+				printf("%%%d = icmp slt double %s, %%%d\n", temporary_var, node->child->value, local_vars[1]);
 			} else {
 				printf("%%%d = icmp slt %s %s, %s\n", temporary_var, type, node->child->value, node->child->brother->value);
 			}
@@ -1261,7 +1807,10 @@ void gt_gen(Node *node){
 				printf("\n");
 				local_vars[1] = temporary_var;
 				temporary_var++;
-			} 
+			} else if(is_expression(node->child->brother)){
+				code_gen(node->child->brother);
+				local_vars[1] = temporary_var-1;
+			}
 			type = strdup(first_type);
 			convert_types(node->child->brother, first_type);
 			local_vars[1] = temporary_var-1;
@@ -1271,7 +1820,10 @@ void gt_gen(Node *node){
 				printf("\n");
 				local_vars[0] = temporary_var;
 				temporary_var++;
-			} 
+			} else if(is_expression(node->child)){
+				code_gen(node->child);
+				local_vars[0] = temporary_var-1;
+			}
 		} else {
 			if(!strcmp(node->child->token, "Id")){
 				printf("%%%d = load %s, %s* ", temporary_var, first_type, first_type);
@@ -1279,7 +1831,10 @@ void gt_gen(Node *node){
 				printf("\n");
 				local_vars[0] = temporary_var;
 				temporary_var++;
-			} 
+			} else if(is_expression(node->child)){
+				code_gen(node->child);
+				local_vars[0] = temporary_var-1;
+			}
 			type = strdup(second_type);
 			convert_types(node->child, second_type);
 			local_vars[0] = temporary_var-1;
@@ -1289,17 +1844,20 @@ void gt_gen(Node *node){
 				printf("\n");
 				local_vars[1] = temporary_var;
 				temporary_var++;
-			} 
+			} else if(is_expression(node->child->brother)){
+				code_gen(node->child->brother);
+				local_vars[1] = temporary_var-1;
+			}
 		}
 		if(!strcmp(type, "double")){
 			if(greater == 1){
-				if(!strcmp(node->child->token, "Id")){
+				if(!strcmp(node->child->token, "Id") || is_expression(node->child)){
 					printf("%%%d = fcmp ogt double %%%d, %%%d\n", temporary_var, local_vars[0], local_vars[1]);
 				} else { /* Is another terminal */
 					printf("%%%d = fcmp ogt double %s, %%%d\n", temporary_var, node->child->value, local_vars[1]);
 				}
 			} else {
-				if(!strcmp(node->child->brother->token, "Id")){
+				if(!strcmp(node->child->brother->token, "Id") || is_expression(node->child->brother)){
 					printf("%%%d = fcmp ogt double %%%d, %%%d\n", temporary_var, local_vars[0], local_vars[1]);
 				} else { /* Is another terminal */
 					printf("%%%d = fcmp ogt double %%%d, %s\n", temporary_var, local_vars[0], node->child->brother->value);
@@ -1307,13 +1865,13 @@ void gt_gen(Node *node){
 			}
 		} else {
 			if(greater == 1){
-				if(!strcmp(node->child->token, "Id")){
+				if(!strcmp(node->child->token, "Id") || is_expression(node->child)){
 					printf("%%%d = icmp sgt %s %%%d, %%%d\n", temporary_var, type, local_vars[0], local_vars[1]);
 				} else { /* Is another terminal */
 					printf("%%%d = icmp sgt %s %s, %%%d\n", temporary_var, type, node->child->value, local_vars[1]);
 				}
 			} else {
-				if(!strcmp(node->child->brother->token, "Id")){
+				if(!strcmp(node->child->brother->token, "Id") || is_expression(node->child->brother)){
 					printf("%%%d = icmp sgt %s %%%d, %%%d\n", temporary_var, type, local_vars[0], local_vars[1]);
 				} else { /* Is another terminal */
 					printf("%%%d = icmp sgt %s %%%d, %s\n", temporary_var, type, local_vars[0], node->child->brother->value);
@@ -1322,27 +1880,47 @@ void gt_gen(Node *node){
 		}
 		temporary_var++;
 	} else {
+		if(!strcmp(node->child->token, "Id")){
+			printf("%%%d = load %s, %s* ", temporary_var, first_type, first_type);
+			code_gen(node->child);
+			printf("\n");
+			local_vars[0] = temporary_var;
+			temporary_var++;
+		} else if(is_expression(node->child)){
+			code_gen(node->child);
+			local_vars[0] = temporary_var-1;
+		}
+		if(!strcmp(node->child->brother->token, "Id")){
+			printf("%%%d = load %s, %s* ", temporary_var, second_type, second_type);
+			code_gen(node->child->brother);
+			printf("\n");
+			local_vars[1] = temporary_var;
+			temporary_var++;
+		} else if(is_expression(node->child->brother)){
+			code_gen(node->child->brother);
+			local_vars[1] = temporary_var-1;
+		}
 		if(!strcmp(type, "double")) {
-			if(!strcmp(node->child->token, "Id")){
-				if(!strcmp(node->child->brother->token, "Id")){  /* First and Second are ID */
+			if(!strcmp(node->child->token, "Id") || is_expression(node->child)){
+				if(!strcmp(node->child->brother->token, "Id") || is_expression(node->child->brother)){  /* First and Second are ID */
 					printf("%%%d = fcmp ogt double %%%d, %%%d\n", temporary_var, local_vars[0], local_vars[1]);
 				} else { /* First is ID */
 					printf("%%%d = fcmp ogt double %%%d, %s\n", temporary_var, local_vars[0], node->child->brother->value);
 				}
-			} else if(!strcmp(node->child->brother->token, "Id")){ /* Second is ID */
+			} else if(!strcmp(node->child->brother->token, "Id") || is_expression(node->child->brother)){ /* Second is ID */
 				printf("%%%d = fcmp ogt double %s, %%%d\n", temporary_var, node->child->value, local_vars[1]);
 			} else {
 				printf("%%%d = fcmp ogt double %s, %s\n", temporary_var, node->child->value, node->child->brother->value);
 			}
 		} else {
-			if(!strcmp(node->child->token, "Id")){
-				if(!strcmp(node->child->brother->token, "Id")){  /* First and Second are ID */
+			if(!strcmp(node->child->token, "Id") || is_expression(node->child)){
+				if(!strcmp(node->child->brother->token, "Id") || is_expression(node->child->brother)){  /* First and Second are ID */
 					printf("%%%d = icmp sgt %s %%%d, %%%d\n", temporary_var, type, local_vars[0], local_vars[1]);
 				} else { /* First is ID */
-					printf("%%%d = icmp sgt %s %%%d, %s\n", temporary_var, type, local_vars[0], node->child->brother->value);
+					printf("%%%d = icmp sgt double %%%d, %s\n", temporary_var, local_vars[0], node->child->brother->value);
 				}
-			} else if(!strcmp(node->child->brother->token, "Id")){ /* Second is ID */
-				printf("%%%d = icmp sgt %s %s, %%%d\n", temporary_var, type, node->child->value, local_vars[1]);
+			} else if(!strcmp(node->child->brother->token, "Id") || is_expression(node->child->brother)){ /* Second is ID */
+				printf("%%%d = icmp sgt double %s, %%%d\n", temporary_var, node->child->value, local_vars[1]);
 			} else {
 				printf("%%%d = icmp sgt %s %s, %s\n", temporary_var, type, node->child->value, node->child->brother->value);
 			}
@@ -1360,15 +1938,17 @@ void not_gen(Node *node){
 		code_gen(node->child);
 		printf("\n");
 		temporary_var++;
+	} else if(is_expression(node->child)){
+		code_gen(node->child);
 	}
 	if(!strcmp(type, "double")){
-		if(!strcmp(node->child->token, "Id")) {
+		if(!strcmp(node->child->token, "Id") || is_expression(node->child)) {
 			printf("%%%d = fcmp une double %%%d, 0.000000e+00\n", temporary_var, temporary_var-1);
 		} else {
 			printf("%%%d = fcmp une double %s, 0.000000e+00\n", temporary_var, node->child->value);
 		}
 	} else {
-		if(!strcmp(node->child->token, "Id")) {
+		if(!strcmp(node->child->token, "Id") || is_expression(node->child)) {
 			printf("%%%d = icmp ne %s %%%d, 0\n", temporary_var, type, temporary_var-1);
 		} else {
 			printf("%%%d = icmp ne %s %s, 0\n", temporary_var, type, node->child->value);
@@ -1388,6 +1968,13 @@ int is_global(char *name){
 			return 1;
 		}
 		aux = aux->next;
+	}
+	return 0;
+}
+
+int is_expression(Node *node){
+	if(!strcmp(node->token, "Add") || !strcmp(node->token, "Sub") || !strcmp(node->token, "Mul") || !strcmp(node->token, "Div") || !strcmp(node->token, "Mod") || !strcmp(node->token, "Eq") || !strcmp(node->token, "Ne") || !strcmp(node->token, "Gt") || !strcmp(node->token, "Lt") || !strcmp(node->token, "Ge") || !strcmp(node->token, "Le") || !strcmp(node->token, "And") || !strcmp(node->token, "Or") || !strcmp(node->token, "BitWiseAnd") || !strcmp(node->token, "BitWiseOr") || !strcmp(node->token, "BitWiseXor")){
+		return 1;
 	}
 	return 0;
 }
@@ -1412,39 +1999,39 @@ int greater_type(char *first, char *second){
 void convert_types(Node *received, char *expected){
 	if((!strcmp(received->type, "char") || !strcmp(received->type, "short") || !strcmp(received->type, "int")) && !strcmp(expected, "double")){
 		if(strcmp(received->type, "int")){
-			if(!strcmp(received->token, "Id")){
-				printf("%%%d = sext %s %%%d to i32\n", temporary_var, types_to_llvm(received->type), temporary_var-1);
-			} else {
+			if(!strcmp(received->token, "IntLit") || !strcmp(received->token, "ChrLit") || !strcmp(received->token, "RealLit")){
 				printf("%%%d = sext ", temporary_var);
 				code_gen(received);
 				printf(" to %s\n", expected);
+			} else {
+				printf("%%%d = sext %s %%%d to i32\n", temporary_var, types_to_llvm(received->type), temporary_var-1);
 			}
 			temporary_var++;
 		}
 		printf("%%%d = sitofp i32 %%%d to %s\n", temporary_var, temporary_var-1, expected);
 	} else if(((!strcmp(received->type, "int") || !strcmp(received->type, "short")) && !strcmp(expected, "i8")) || (!strcmp(received->type, "int") && !strcmp(expected, "i16"))){ /* Expected char - Got int, short || Expected short - Got int*/
-		if(!strcmp(received->token, "Id")){
-			printf("%%%d = trunc %s %%%d to %s\n", temporary_var, types_to_llvm(received->type), temporary_var-1, expected);
-		} else {
+		if(!strcmp(received->token, "IntLit") || !strcmp(received->token, "ChrLit") || !strcmp(received->token, "RealLit")){
 			printf("%%%d = trunc %s ", temporary_var, types_to_llvm(received->type));
 			code_gen(received);
 			printf(" to %s\n", expected);
+		} else {
+			printf("%%%d = trunc %s %%%d to %s\n", temporary_var, types_to_llvm(received->type), temporary_var-1, expected);
 		}
 	} else if((!strcmp(expected, "i8") || !strcmp(expected, "i16") || !strcmp(expected, "i32")) && !strcmp(received->type, "double")){ /* Expected char, short, int - Got double */
-		if(!strcmp(received->token, "Id")){
-			printf("%%%d = fptosi double %%%d to %s\n", temporary_var, temporary_var-1, expected);
-		} else {
+		if(!strcmp(received->token, "IntLit") || !strcmp(received->token, "ChrLit") || !strcmp(received->token, "RealLit")){
 			printf("%%%d = fptosi double ", temporary_var);
 			code_gen(received);
 			printf(" to %s\n", expected);
+		} else {
+			printf("%%%d = fptosi double %%%d to %s\n", temporary_var, temporary_var-1, expected);
 		}
 	} else {
-		if(!strcmp(received->token, "Id")){
-			printf("%%%d = sext %s %%%d to %s\n", temporary_var, types_to_llvm(received->type), temporary_var-1, expected);
-		} else {
+		if(!strcmp(received->token, "IntLit") || !strcmp(received->token, "ChrLit") || !strcmp(received->token, "RealLit")){
 			printf("%%%d = sext ", temporary_var);
 			code_gen(received);
 			printf(" to %s\n", expected);
+		} else {
+			printf("%%%d = sext %s %%%d to %s\n", temporary_var, types_to_llvm(received->type), temporary_var-1, expected);
 		}
 	}
 	temporary_var++;

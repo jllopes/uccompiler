@@ -4,6 +4,7 @@
 
 int temporary_var;
 int and_cmp;
+int or_cmp;
 char* types_to_llvm(char* type);
 void code_gen(Node *node);
 void program_gen(Node *node);
@@ -37,6 +38,7 @@ void lt_gen(Node *node);
 void gt_gen(Node *node);
 void not_gen(Node *node);
 int is_global(char *name);
+int is_expression(Node *node);
 int greater_type(char *first, char *second);
 void convert_types(Node *param, char *expected);
 #endif //CODE_GEN_H
