@@ -1,4 +1,0 @@
-int a(void);
-int a(void) {
-	a + b, c + d;
-}
